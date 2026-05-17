@@ -29,3 +29,8 @@
 - API klíče / hesla / secrets v kódu → jen `.env`
 - Commitovat `.env` soubory
 - Zanechat broken build v gitu
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+<!-- SPECKIT END -->

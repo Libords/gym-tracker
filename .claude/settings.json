@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash .specify/extensions/git/scripts/bash/initialize-repo.sh)",
+      "Bash(bash .specify/extensions/git/scripts/bash/create-new-feature.sh*)",
+      "Bash(bash .specify/extensions/git/scripts/bash/auto-commit.sh*)",
+      "Bash(git commit *)",
+      "Bash(git add *)",
+      "Bash(git push)"
+    ]
+  }
+}
