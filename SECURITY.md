@@ -20,16 +20,22 @@ Tento soubor je závazný pro všechny AI agenty i vývojáře pracující na pr
 
 ## 2) Správný vzor — citlivé hodnoty patří jen do `.env`
 
+**Jak přenést `.env` na nový počítač:**
+1. `git clone` stáhne projekt včetně `.env.example`
+2. Zkopíruj: `cp .env.example .env`
+3. Doplň reálné hodnoty ze Supabase dashboardu (Settings → API Keys)
+4. `.env` nikdy neposílej emailem ani přes chat — sdílej jen `.env.example`
+
 ```bash
 # .env  ← gitignorován, NESMÍ jít do gitu
 EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
-# service_role key NIKDY sem — patří jen na server (Edge Functions)
+# service_role key pouze pro seed skripty, po použití rotovat!
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGci...
 ```
 
 Kód pak čte hodnotu výhradně přes env:
 ```typescript
-import Constants from 'expo-constants';
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 ```
@@ -88,10 +94,27 @@ dist/
 
 ---
 
-## 7) Pravidla pro AI agenty
+## 7) Pravidla pro AI agenty (Claude Code a jiné)
 
 - Nikdy nezapisovat reálná hesla ani API klíče do kódu, testů ani dokumentace
 - Nikdy necommitovat `.env` soubory
 - Při přidání nového env klíče: vždy aktualizovat `.env.example` s placeholder hodnotou
 - Při detekci citlivých dat v existujícím kódu: ihned upozornit uživatele
 - Testovací/demo data jsou akceptovatelná v dev prostředí, ale musí být odstraněna před produkcí
+- Nikdy nepřeposílat obsah `.env` souboru do chatu ani do jiné aplikace
+- Při použití `service_role` key: upozornit uživatele na rotaci klíče po dokončení operace
+
+---
+
+## 8) Pravidla pro budoucí AI asistenta v aplikaci
+
+Pokud bude do aplikace přidán AI asistent (např. Claude API):
+
+- **Komunikace výhradně přes Supabase Edge Functions** (serverside) — nikdy přímo z mobilní app
+- **Edge Function má přístup jen k datům přihlášeného uživatele** — ověřeno přes `auth.uid()`
+- **Žádný přístup k datům jiných uživatelů** — Edge Function nesmí obdržet cizí `user_id`
+- **API klíč pro AI (Anthropic/OpenAI) uložen jako Supabase secret** — nikdy v kódu ani `.env` v repozitáři
+- **AI nesmí vracet raw data z DB** — pouze zpracované odpovědi
+- **Rate limiting** — každý uživatel má limit dotazů (ochrana před zneužitím a náklady)
+- **Logování dotazů** — pro audit a detekci anomálií
+- **Žádné PII v promptech** — jméno, email, heslo nesmí být součástí promptu poslaného do AI
