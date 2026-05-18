@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  TextInput, Modal, Alert, ActivityIndicator, FlatList, Image,
+  TextInput, Modal, Alert, ActivityIndicator,
 } from 'react-native'
 import { LineChart } from 'react-native-gifted-charts'
-import * as ImagePicker from 'expo-image-picker'
-import { useWeightLogs, useBodyMeasurements, useProgressPhotos } from '../../../src/hooks/useProgress'
+import { useWeightLogs, useBodyMeasurements } from '../../../src/hooks/useProgress'
 
-type Tab = 'vaha' | 'miry' | 'fotky'
+type Tab = 'vaha' | 'miry'
 
 export default function ProgressScreen() {
   const [tab, setTab] = useState<Tab>('vaha')
@@ -16,10 +15,10 @@ export default function ProgressScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Progress</Text>
       <View style={styles.tabs}>
-        {(['vaha', 'miry', 'fotky'] as Tab[]).map(t => (
+        {(['vaha', 'miry'] as Tab[]).map(t => (
           <TouchableOpacity key={t} style={[styles.tab, tab === t && styles.tabActive]} onPress={() => setTab(t)}>
             <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
-              {t === 'vaha' ? '⚖️ Váha' : t === 'miry' ? '📏 Míry' : '📸 Fotky'}
+              {t === 'vaha' ? '⚖️ Váha' : '📏 Míry'}
             </Text>
           </TouchableOpacity>
         ))}
@@ -27,7 +26,6 @@ export default function ProgressScreen() {
 
       {tab === 'vaha' && <WeightTab />}
       {tab === 'miry' && <MeasurementsTab />}
-      {tab === 'fotky' && <PhotosTab />}
     </View>
   )
 }
@@ -207,54 +205,6 @@ function MeasurementsTab() {
   )
 }
 
-function PhotosTab() {
-  const { photos, loading, addPhoto, deletePhoto } = useProgressPhotos()
-  const [uploading, setUploading] = useState(false)
-
-  const handlePick = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
-    if (status !== 'granted') { Alert.alert('Přístup ke galerii byl zamítnut.'); return }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.7 })
-    if (result.canceled) return
-    setUploading(true)
-    try {
-      await addPhoto(result.assets[0].uri, new Date().toISOString().split('T')[0])
-    } catch {
-      Alert.alert('Chyba', 'Nepodařilo se nahrát fotku.')
-    }
-    setUploading(false)
-  }
-
-  if (loading) return <ActivityIndicator style={{ marginTop: 40 }} />
-
-  return (
-    <View style={{ flex: 1 }}>
-      {photos.length === 0 && <Text style={styles.empty}>Zatím žádné fotky progresu.</Text>}
-      <FlatList
-        data={photos}
-        numColumns={2}
-        keyExtractor={p => p.id}
-        contentContainerStyle={{ padding: 8, paddingBottom: 100 }}
-        renderItem={({ item }) => (
-          <View style={styles.photoItem}>
-            {item.url && <Image source={{ uri: item.url }} style={styles.photo} />}
-            <Text style={styles.photoDate}>{new Date(item.date).toLocaleDateString('cs-CZ')}</Text>
-            <TouchableOpacity onPress={() => Alert.alert('Smazat?', '', [
-              { text: 'Zrušit', style: 'cancel' },
-              { text: 'Smazat', style: 'destructive', onPress: () => deletePhoto(item) },
-            ])}>
-              <Text style={[styles.deleteBtn, { textAlign: 'center' }]}>✕</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      />
-      <TouchableOpacity style={styles.fab} onPress={handlePick} disabled={uploading}>
-        {uploading ? <ActivityIndicator color="#fff" /> : <Text style={styles.fabText}>+ Přidat fotku</Text>}
-      </TouchableOpacity>
-    </View>
-  )
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 16, paddingTop: 16 },
   title: { fontSize: 26, fontWeight: 'bold', marginBottom: 12 },
@@ -272,9 +222,6 @@ const styles = StyleSheet.create({
   measureCard: { backgroundColor: '#f8f9fa', borderRadius: 12, padding: 14, marginBottom: 10 },
   measureGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
   measureItem: { fontSize: 13, color: '#444', backgroundColor: '#e2e8f0', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  photoItem: { flex: 1, margin: 4, backgroundColor: '#f8f9fa', borderRadius: 12, overflow: 'hidden' },
-  photo: { width: '100%', height: 160 },
-  photoDate: { color: '#888', fontSize: 12, textAlign: 'center', paddingVertical: 4 },
   fab: { position: 'absolute', bottom: 24, left: 0, right: 0, marginHorizontal: 16, backgroundColor: '#2563eb', borderRadius: 12, padding: 16, alignItems: 'center' },
   fabText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 24 },

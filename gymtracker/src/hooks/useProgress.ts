@@ -23,15 +23,6 @@ export type BodyMeasurement = {
   note: string | null
 }
 
-export type ProgressPhoto = {
-  id: string
-  user_id: string
-  storage_path: string
-  date: string
-  note: string | null
-  url?: string
-}
-
 export function useWeightLogs() {
   const { user } = useAuth()
   const [logs, setLogs] = useState<WeightLog[]>([])
@@ -100,52 +91,4 @@ export function useBodyMeasurements() {
   }
 
   return { measurements, loading, addMeasurement, deleteMeasurement }
-}
-
-export function useProgressPhotos() {
-  const { user } = useAuth()
-  const [photos, setPhotos] = useState<ProgressPhoto[]>([])
-  const [loading, setLoading] = useState(true)
-
-  const fetch = useCallback(async () => {
-    if (!user) return
-    const { data } = await supabase
-      .from('progress_photos')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('date', { ascending: false })
-
-    const withUrls = await Promise.all((data ?? []).map(async p => {
-      const { data: urlData } = supabase.storage
-        .from('progress-photos')
-        .getPublicUrl(p.storage_path)
-      return { ...p, url: urlData.publicUrl }
-    }))
-    setPhotos(withUrls)
-    setLoading(false)
-  }, [user])
-
-  useEffect(() => { fetch() }, [fetch])
-
-  const refetch = fetch
-
-  const addPhoto = async (uri: string, date: string, note?: string) => {
-    if (!user) return
-    const ext = uri.split('.').pop() ?? 'jpg'
-    const path = `${user.id}/${Date.now()}.${ext}`
-    const response = await globalThis.fetch(uri)
-    const blob = await response.blob()
-    const { error } = await supabase.storage.from('progress-photos').upload(path, blob)
-    if (error) throw error
-    await supabase.from('progress_photos').insert({ user_id: user.id, storage_path: path, date, note: note ?? null })
-    await refetch()
-  }
-
-  const deletePhoto = async (photo: ProgressPhoto) => {
-    await supabase.storage.from('progress-photos').remove([photo.storage_path])
-    await supabase.from('progress_photos').delete().eq('id', photo.id)
-    setPhotos(prev => prev.filter(p => p.id !== photo.id))
-  }
-
-  return { photos, loading, addPhoto, deletePhoto }
 }
