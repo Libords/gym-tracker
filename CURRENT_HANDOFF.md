@@ -102,13 +102,18 @@ EXPO_PUBLIC_USDA_API_KEY=FhMTR3rnYBaEAIe8KbWueatKHZjoBX05mGohVqcW
 
 **Sprint H — Exercise Database ✅ HOTOVO** (873 cviků importováno z free-exercise-db).
 
-**Možnosti dalšího sprintu (vyber dle priority):**
-- **B6** — Historie tréninků (seskupení po dnech)
-- **Sprint I — UI/UX vylepšení** — filtr podle equipment (zatím jen body_part), favorite exercises, recent exercises, GIF/obrázky cviků
-- **E2** — Přehledy tréninků (PR, volume, frekvence)
-- **E3** — Přehledy výživy (průměry za týden/měsíc)
-- **F3** — Push notifikace (připomínka tréninku/jídla)
-- **F4** — Offline podpora
+**Další: Sprint I — Workout UX Polish** (viz PROJECT_PLAN.md, sekce "Doporučené pořadí dalších sprintů").
+
+Stručně: historie tréninků (B6) + workout templates + rest timer + opakování posledního tréninku + equipment filtr. Cíl: app použitelná denně bez třenic.
+
+**Start v nové session:**
+```
+/speckit.specify "Workout UX polish — Sprint I: historie tréninků po dnech, workout templates (uložené rutiny), rest timer mezi sériemi, opakování posledního tréninku, equipment filtr v exercise picker. Cíl: app použitelná denně bez třenic."
+```
+
+Pak: `/speckit.clarify` → `/speckit.plan` → `/speckit.tasks` → `/speckit.implement`.
+
+Strategická roadmapa (Sprint I → J → K → L) je v PROJECT_PLAN.md.
 
 ---
 

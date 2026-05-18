@@ -98,16 +98,92 @@ Vždy začni čtením tohoto souboru a vyber první nezaškrtnutý bod.
 
 ---
 
-## Backlog
+## Doporučené pořadí dalších sprintů
 
-- [ ] B6 — Historie tréninků po dnech
-- [ ] E2–E4 — Přehledy a export
-- [ ] F3 — Push notifikace
-- [ ] F4 — Offline podpora
-- Sdílení výsledků / social funkce (propojení partnerských účtů)
-- AI doporučení tréninků a stravy
-- Apple Health / Google Fit integrace
-- Předpřipravené tréninkové plány
+Pořadí je voleno podle **value/effort ratio** — co dává největší užitek uživateli s nejmenším úsilím.
+
+| # | Sprint | Proč teď | Effort |
+|---|--------|----------|--------|
+| 1 | **Sprint I** — Workout UX Polish | UX díry: žádná historie, žádné šablony, žádný rest timer. Bez tohoto app není použitelná denně. | 3-5 sessions |
+| 2 | **Sprint J** — Statistics & Insights | Uživatel právě naimportoval 873 cviků + má 2 měsíce dat → čas mu ukázat trendy. | 3-4 sessions |
+| 3 | **Sprint K** — Data & Reliability | Export, notifikace, backup — důvěra v app pro daily use. | 2-3 sessions |
+| 4 | **Sprint L** — Premium features | Offline mode, Apple Health, AI — větší investice, počká si. | 4-6+ sessions |
+
+---
+
+## Sprint I — Workout UX Polish 🔜 NEXT
+
+Cíl: doplnit "obvyklé" funkce každé fitness app (Strong, Hevy, FitBod), aby byla použitelná denně.
+
+- [ ] **I1** — Historie tréninků (B6): seznam dokončených tréninků seskupený po dnech/týdnech, detail s cviky, doba trvání, total volume
+- [ ] **I2** — Workout templates: uživatel uloží rutinu ("Push day", "Pull day", "Legs"), 1-click vytvoří trénink z šablony. DB: nová tabulka `workout_templates` + `template_exercises`
+- [ ] **I3** — Rest timer: po `addSet` auto-start countdown (default 90s, configurable), push notif když uplyne, zvuk/vibrace
+- [ ] **I4** — "Opakovat poslední trénink": tlačítko na seznamu workouts → nový workout pre-filled se stejnými cviky (bez sérií)
+- [ ] **I5** — Equipment filtr v exercise picker: chip row pod body_part (Činka/Osa/Kabel/Stroj/Vlastní váha/Kettlebell/Bands)
+
+**Klíčové soubory:** `app/(app)/workouts/` (history.tsx nový + index.tsx update), `app/(app)/workouts/templates/` (nová sekce), `src/hooks/useWorkouts.ts` (nové hooks), `src/hooks/useRestTimer.ts` (nový), Supabase migrace pro templates.
+
+**Spec-kit start prompt:**
+```
+/speckit.specify "Workout UX polish — Sprint I: historie tréninků po dnech, workout templates (uložené rutiny), rest timer mezi sériemi, opakování posledního tréninku, equipment filtr v exercise picker. Cíl: app použitelná denně bez třenic."
+```
+
+---
+
+## Sprint J — Statistics & Insights
+
+Cíl: ukázat uživateli pokrok pomocí dat, která má app k dispozici (873 cviků × 2 měsíce záznamů).
+
+- [ ] **J1** — Personal Records per exercise: max weight × reps, graf progrese (line chart), PR badge při překonání
+- [ ] **J2** — Volume tracking: total volume (kg × reps) per partie tela týden/měsíc, bar chart trendu
+- [ ] **J3** — Frequency heatmap: kalendář tréninkových dnů (GitHub-contributions style), počet/intenzita
+- [ ] **J4** — Nutrition trends (E3): týdenní/měsíční průměry kalorií, makra adherence (% dosažení cílů)
+- [ ] **J5** — Weight trend: rozšíření existujícího weight grafu o trend line + delta vs cíl
+
+**Klíčové soubory:** `app/(app)/stats/` (nová sekce s tabbar tabs), `src/lib/stats.ts` (kalkulace), reuse `react-native-svg` (už v projektu z D3).
+
+**Spec-kit start prompt:**
+```
+/speckit.specify "Statistics & Insights — Sprint J: personal records per exercise (max weight × reps + graf), volume tracking po partiích, frequency heatmap kalendář tréninkových dnů, nutrition trends (týdenní průměry + macro adherence). Vstup: workouts/workout_sets/meals/weight_logs tabulky."
+```
+
+---
+
+## Sprint K — Data & Reliability
+
+Cíl: důvěra v app pro daily use — uživatel může exportovat data, je notifikován, nezapomene.
+
+- [ ] **K1** — Export CSV: workouts/sets/meals/weight/measurements do CSV (Expo FileSystem + Sharing API)
+- [ ] **K2** — Push notifications (F3): workout reminder podle training_days_per_week, meal log reminder ráno/večer (Expo Notifications)
+- [ ] **K3** — Backup/Import: JSON export celé user DB + import (re-import po reinstalu app)
+
+**Klíčové soubory:** `src/lib/export.ts`, `src/lib/notifications.ts`, `app/(app)/settings/export.tsx`.
+
+**Spec-kit start prompt:**
+```
+/speckit.specify "Data & Reliability — Sprint K: CSV export všech dat (workouts/meals/weight) přes Share Sheet, push notifikace pro připomínky tréninku a jídla podle profilu, JSON backup/import celé user DB."
+```
+
+---
+
+## Sprint L — Premium Features (budoucí)
+
+Větší investice, počkat až bude solidní base.
+
+- [ ] **L1** — Offline mode (F4): Supabase realtime + local SQLite cache (expo-sqlite), sync on reconnect
+- [ ] **L2** — Apple Health / Google Fit: import weight/workouts, export workouts (react-native-health)
+- [ ] **L3** — AI doporučení: workout suggestions na základě historie + cílů, meal suggestions (Anthropic API)
+- [ ] **L4** — Social: propojení partnerských účtů (cycle), sdílení PR, friend feed
+- [ ] **L5** — Předpřipravené tréninkové plány: PPL, 5×5, Push/Pull, Upper/Lower (jako built-in templates)
+
+---
+
+## Workflow pro každý sprint
+
+1. Otevři novou session
+2. Spusť spec-kit prompt z dané sekce (`/speckit.specify`)
+3. Pokračuj `/speckit.clarify` → `/speckit.plan` → `/speckit.tasks` → `/speckit.implement`
+4. Po dokončení: aktualizuj zaškrtnutí, DEV_DIARY.md, CURRENT_HANDOFF.md, commit + push
 
 ---
 
