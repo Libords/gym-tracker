@@ -16,14 +16,14 @@ Vždy začni čtením tohoto souboru a vyber první nezaškrtnutý bod.
 
 ## Sprint A — Základ
 
-- [ ] **A1** — Expo projekt inicializace (`npx create-expo-app --template expo-template-blank-typescript`)
-- [ ] **A2** — Supabase projekt vytvoření + `.env` konfigurace (URL + anon key)
-- [ ] **A3** — Supabase klient setup (`@supabase/supabase-js` + `AsyncStorage` pro session)
-- [ ] **A4** — Expo Router setup (file-based routing, `app/` složka)
-- [ ] **A5** — Auth flow: Login obrazovka (email + heslo)
-- [ ] **A6** — Auth flow: Register obrazovka
-- [ ] **A7** — Auth context / hook (`useAuth`) + protected routes
-- [ ] **A8** — Profil uživatele (jméno, věk, výška, cílová váha) — DB tabulka + RLS + obrazovka
+- [x] **A1** — Expo projekt inicializace (`npx create-expo-app --template expo-template-blank-typescript`)
+- [x] **A2** — Supabase projekt vytvoření + `.env` konfigurace (URL + anon key)
+- [x] **A3** — Supabase klient setup (`@supabase/supabase-js` + `AsyncStorage` pro session)
+- [x] **A4** — Expo Router setup (file-based routing, `app/` složka)
+- [x] **A5** — Auth flow: Login obrazovka (email + heslo)
+- [x] **A6** — Auth flow: Register obrazovka
+- [x] **A7** — Auth context / hook (`useAuth`) + protected routes
+- [x] **A8** — Profil uživatele (jméno, věk, výška, cílová váha) — DB tabulka + RLS + obrazovka
 
 ---
 
@@ -89,4 +89,4 @@ Vždy začni čtením tohoto souboru a vyber první nezaškrtnutý bod.
 ---
 
 ## Hotové sprinty
-*(zatím prázdné)*
+- ✅ **Sprint A** — Základ (2026-05-18)
