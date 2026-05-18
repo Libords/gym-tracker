@@ -4,10 +4,16 @@ import { useAuth } from '../context/AuthContext'
 import type { CycleLog, CycleInfo } from '../types/cycle'
 import { calcCycleInfo } from '../types/cycle'
 
-export function useCycleLogs() {
+function deriveCycleInfo(logs: CycleLog[]): CycleInfo | null {
+  if (logs.length === 0) return null
+  return calcCycleInfo(logs[0].period_start, logs[0].cycle_length, logs[0].period_length)
+}
+
+export function useCycleLogs(mode: 'personal' | 'partner' = 'personal') {
   const { user } = useAuth()
   const [logs, setLogs] = useState<CycleLog[]>([])
   const [loading, setLoading] = useState(true)
+  const isPartner = mode === 'partner'
 
   const fetchLogs = useCallback(async () => {
     if (!user) return
@@ -15,10 +21,11 @@ export function useCycleLogs() {
       .from('cycle_logs')
       .select('*')
       .eq('user_id', user.id)
+      .eq('is_partner', isPartner)
       .order('period_start', { ascending: false })
     setLogs(data ?? [])
     setLoading(false)
-  }, [user])
+  }, [user, isPartner])
 
   useEffect(() => { fetchLogs() }, [fetchLogs])
 
@@ -31,7 +38,14 @@ export function useCycleLogs() {
     if (!user) return
     const { data } = await supabase
       .from('cycle_logs')
-      .insert({ user_id: user.id, period_start, cycle_length, period_length, notes: notes ?? null })
+      .insert({
+        user_id: user.id,
+        period_start,
+        cycle_length,
+        period_length,
+        notes: notes ?? null,
+        is_partner: isPartner,
+      })
       .select()
       .single()
     if (data) setLogs(prev => [data, ...prev].sort((a, b) => b.period_start.localeCompare(a.period_start)))
@@ -42,23 +56,9 @@ export function useCycleLogs() {
     setLogs(prev => prev.filter(l => l.id !== id))
   }
 
-  // Derive current cycle info from the most recent log
-  const cycleInfo: CycleInfo | null =
-    logs.length > 0
-      ? calcCycleInfo(logs[0].period_start, logs[0].cycle_length, logs[0].period_length)
-      : null
-
-  // Latest cycle settings (for default values in form)
+  const cycleInfo: CycleInfo | null = deriveCycleInfo(logs)
   const latestCycleLength = logs[0]?.cycle_length ?? 28
   const latestPeriodLength = logs[0]?.period_length ?? 5
 
-  return {
-    logs,
-    loading,
-    addLog,
-    deleteLog,
-    cycleInfo,
-    latestCycleLength,
-    latestPeriodLength,
-  }
+  return { logs, loading, addLog, deleteLog, cycleInfo, latestCycleLength, latestPeriodLength }
 }

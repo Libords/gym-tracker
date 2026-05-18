@@ -9,6 +9,7 @@ export type CycleLog = {
   cycle_length: number   // default 28
   period_length: number  // default 5
   notes: string | null
+  is_partner: boolean
 }
 
 export type CycleInfo = {
@@ -225,6 +226,64 @@ export const PHASE_DATA: Record<CyclePhase, PhaseRecommendation> = {
     // Wellbeing
     expectedSymptoms: ['Únava', 'Zadržování vody', 'Nadýmání', 'Citlivost prsou', 'Výkyvy nálad', 'Chuť na sladké / slané', 'Podrážděnost (PMS)'],
     wellbeingTip: 'Buď k sobě laskavá. Snižuj stres, choď dříve spát, vyhni se přetěžování. Teplá koupel s hořčíkovou solí (Epsom sůl) pomáhá se svalovým napětím.',
+  },
+}
+
+// ─── Partner perspective (how a man can understand & support his partner) ──────
+
+export type PartnerPerspective = {
+  moodNote: string          // What she might be feeling
+  supportTips: string[]     // How he can help
+  togetherActivities: string[] // Activities to do together
+  avoid: string             // What to avoid / be mindful of
+}
+
+export const PARTNER_PERSPECTIVE: Record<CyclePhase, PartnerPerspective> = {
+  menstrual: {
+    moodNote: 'Partnerka může být unavená, podrážděná nebo citlivá. Je to fyziologické, ne osobní.',
+    supportTips: [
+      'Nabídni teplý čaj, horkou čokoládu nebo výhřevnou deku',
+      'Dej jí prostor, pokud ji potřebuje, ale buď dostupný',
+      'Pomoz s domácností bez toho, aniž by musela prosit',
+      'Vyhni se výtkám a diskuzím o citlivých tématech',
+      'Masáž beder nebo zad může výrazně pomoci',
+    ],
+    togetherActivities: ['Procházka', 'Film doma', 'Teplá koupel', 'Jemná jóga pro dva', 'Klidný večer doma'],
+    avoid: 'Vyhni se nárokování na výkon, silným tréninkovým výzvám nebo plánování náročných akcí.',
+  },
+  follicular: {
+    moodNote: 'Partnerka je energická, kreativní a v dobré náladě. Ráda zkouší nové věci a je komunikativní.',
+    supportTips: [
+      'Plánuj výlety, rande nebo společné aktivity — bude mít chuť',
+      'Podpoř její nové projekty nebo nápady',
+      'Je to skvělý čas na důležité rozhovory',
+      'Užijte si sport nebo pohyb společně',
+    ],
+    togetherActivities: ['Společný silový trénink', 'Výlet nebo turistika', 'Nová restaurace', 'Tanec', 'Cyklovýlet'],
+    avoid: 'Nic zásadního — je v nejlepší kondici. Nevynechávej plánované aktivity.',
+  },
+  ovulation: {
+    moodNote: 'Partnerka je na vrcholu energie, sebevědomí a nálady. Charismatická, otevřená, společenská.',
+    supportTips: [
+      'Ideální čas na romantiku a kvalitní čas spolu',
+      'Pochval ji — ocení to víc než jindy',
+      'Plánuj speciální zážitky nebo výlety',
+      'Buď přítomný a pozorný',
+    ],
+    togetherActivities: ['Náročný společný trénink', 'Rande večer venku', 'Sportovní akce', 'Skupinové aktivity', 'Tanec, lezení'],
+    avoid: 'Nic — toto je nejlepší okno pro společné aktivity a plánování.',
+  },
+  luteal: {
+    moodNote: 'Partnerka může mít méně energie, být přecitlivělejší nebo podrážděná — zejména v posledním týdnu (PMS). Nejde o náladu "z ničeho" — má fyziologický důvod.',
+    supportTips: [
+      'Buď trpělivý a nechovej se defenzivně',
+      'Nabídni přirozenou pomoc bez čekání na žádost',
+      'Mírná fyzická aktivita spolu (procházka) jí může pomoci',
+      'Sladké nebo slané pochoutky mohou zmírnit chutě',
+      'Ujisti ji, že jsi s ní — v pozdní luteální fázi může pochybovat sama o sobě',
+    ],
+    togetherActivities: ['Procházka', 'Lehká jóga', 'Film nebo seriál', 'Klidná večeře doma', 'Relaxační masáž'],
+    avoid: 'Vyhni se konfrontacím, tvrdé kritice nebo náročným plánům v posledních 7 dnech před menstruací.',
   },
 }
 

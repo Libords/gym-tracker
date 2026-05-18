@@ -6,8 +6,9 @@ import {
 import { LineChart } from 'react-native-gifted-charts'
 import { useWeightLogs, useBodyMeasurements } from '../../../src/hooks/useProgress'
 import { useCycleLogs } from '../../../src/hooks/useCycle'
+import { useProfile } from '../../../src/hooks/useProfile'
 import type { CycleInfo, CyclePhase } from '../../../src/types/cycle'
-import { PHASE_DATA, buildCycleTimeline } from '../../../src/types/cycle'
+import { PHASE_DATA, PARTNER_PERSPECTIVE, buildCycleTimeline } from '../../../src/types/cycle'
 
 type Tab = 'vaha' | 'miry' | 'cyklus'
 
@@ -19,19 +20,27 @@ const TAB_LABELS: Record<Tab, string> = {
 
 export default function ProgressScreen() {
   const [tab, setTab] = useState<Tab>('vaha')
+  const { profile } = useProfile()
+  const isMale = profile?.gender === 'male'
+  const hasPartnerCycle = profile?.has_partner_cycle === true
+
+  // Tab label for cycle: women = Cyklus, men with partner = Partnerka
+  const cycleTabLabel = isMale ? '💑 Partnerka' : '🌙 Cyklus'
+  // Show cycle tab for women always, for men only if has_partner_cycle
+  const showCycleTab = !isMale || hasPartnerCycle
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Progress</Text>
       <View style={styles.tabs}>
-        {(['vaha', 'miry', 'cyklus'] as Tab[]).map(t => (
+        {(['vaha', 'miry', ...(showCycleTab ? ['cyklus'] : [])] as Tab[]).map(t => (
           <TouchableOpacity
             key={t}
             style={[styles.tab, tab === t && styles.tabActive]}
             onPress={() => setTab(t)}
           >
             <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
-              {TAB_LABELS[t]}
+              {t === 'cyklus' ? cycleTabLabel : TAB_LABELS[t]}
             </Text>
           </TouchableOpacity>
         ))}
@@ -39,7 +48,7 @@ export default function ProgressScreen() {
 
       {tab === 'vaha' && <WeightTab />}
       {tab === 'miry' && <MeasurementsTab />}
-      {tab === 'cyklus' && <CycleTab />}
+      {tab === 'cyklus' && <CycleTab partnerMode={isMale} />}
     </View>
   )
 }
@@ -230,8 +239,8 @@ function MeasurementsTab() {
 
 // ─── Cycle tab ────────────────────────────────────────────────────────────────
 
-function CycleTab() {
-  const { logs, loading, addLog, deleteLog, cycleInfo, latestCycleLength, latestPeriodLength } = useCycleLogs()
+function CycleTab({ partnerMode = false }: { partnerMode?: boolean }) {
+  const { logs, loading, addLog, deleteLog, cycleInfo, latestCycleLength, latestPeriodLength } = useCycleLogs(partnerMode ? 'partner' : 'personal')
   const [modalVisible, setModalVisible] = useState(false)
   const [saving, setSaving] = useState(false)
   const [periodDate, setPeriodDate] = useState(new Date().toISOString().split('T')[0])
@@ -255,14 +264,18 @@ function CycleTab() {
       {!cycleInfo ? (
         // ── Onboarding ──
         <View style={cycleStyles.onboarding}>
-          <Text style={cycleStyles.onboardingEmoji}>🌙</Text>
-          <Text style={cycleStyles.onboardingTitle}>Sledování cyklu</Text>
+          <Text style={cycleStyles.onboardingEmoji}>{partnerMode ? '💑' : '🌙'}</Text>
+          <Text style={cycleStyles.onboardingTitle}>{partnerMode ? 'Cyklus partnerky' : 'Sledování cyklu'}</Text>
           <Text style={cycleStyles.onboardingText}>
-            Zadej první den poslední menstruace a aplikace ti bude doporučovat tréninky a výživu
-            přizpůsobené tvé aktuální fázi cyklu.
+            {partnerMode
+              ? 'Zadej první den poslední menstruace partnerky. Aplikace ti poradí, jak ji nejlépe podpořit v každé fázi.'
+              : 'Zadej první den poslední menstruace a aplikace ti bude doporučovat tréninky a výživu přizpůsobené tvé aktuální fázi cyklu.'
+            }
           </Text>
           <TouchableOpacity style={cycleStyles.onboardingBtn} onPress={() => setModalVisible(true)}>
-            <Text style={cycleStyles.onboardingBtnText}>Zadat první menstruaci</Text>
+            <Text style={cycleStyles.onboardingBtnText}>
+              {partnerMode ? 'Zadat cyklus partnerky' : 'Zadat první menstruaci'}
+            </Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -277,7 +290,7 @@ function CycleTab() {
               onPress={() => setSection('training')}
             >
               <Text style={[cycleStyles.sectionTabText, section === 'training' && cycleStyles.sectionTabTextActive]}>
-                💪 Trénink
+                {partnerMode ? '🤝 Jak pomoci' : '💪 Trénink'}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -285,14 +298,18 @@ function CycleTab() {
               onPress={() => setSection('nutrition')}
             >
               <Text style={[cycleStyles.sectionTabText, section === 'nutrition' && cycleStyles.sectionTabTextActive]}>
-                🥗 Výživa
+                {partnerMode ? '🥗 Výživa partnerky' : '🥗 Výživa'}
               </Text>
             </TouchableOpacity>
           </View>
 
-          {section === 'training'
-            ? <TrainingSection info={cycleInfo} />
-            : <NutritionSection info={cycleInfo} />
+          {partnerMode
+            ? section === 'training'
+              ? <PartnerSupportSection info={cycleInfo} />
+              : <NutritionSection info={cycleInfo} />
+            : section === 'training'
+              ? <TrainingSection info={cycleInfo} />
+              : <NutritionSection info={cycleInfo} />
           }
 
           {/* Log history */}
@@ -557,6 +574,52 @@ function NutritionSection({ info }: { info: CycleInfo }) {
       ))}
 
       <Text style={cycleStyles.subTitle}>Očekávané příznaky</Text>
+      <View style={cycleStyles.symptomsRow}>
+        {pd.expectedSymptoms.map((s, i) => (
+          <View key={i} style={cycleStyles.symptomBadge}>
+            <Text style={cycleStyles.symptomText}>{s}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  )
+}
+
+// ─── Partner support section ──────────────────────────────────────────────────
+
+function PartnerSupportSection({ info }: { info: CycleInfo }) {
+  const pd = PHASE_DATA[info.phase]
+  const pp = PARTNER_PERSPECTIVE[info.phase]
+
+  return (
+    <View style={cycleStyles.section}>
+      <Text style={cycleStyles.sectionTitle}>🤝 Jak podpořit partnerku</Text>
+
+      <View style={[cycleStyles.tipCard, { borderLeftColor: pd.color }]}>
+        <Text style={cycleStyles.tipText}>{pp.moodNote}</Text>
+      </View>
+
+      <Text style={cycleStyles.subTitle}>✅ Co teď pomáhá</Text>
+      {pp.supportTips.map((tip, i) => (
+        <View key={i} style={cycleStyles.workoutRow}>
+          <View style={[cycleStyles.workoutDot, { backgroundColor: pd.color }]} />
+          <Text style={cycleStyles.workoutText}>{tip}</Text>
+        </View>
+      ))}
+
+      <Text style={[cycleStyles.subTitle, { marginTop: 12 }]}>🏃 Aktivity pro dva</Text>
+      {pp.togetherActivities.map((a, i) => (
+        <View key={i} style={cycleStyles.workoutRow}>
+          <View style={[cycleStyles.workoutDot, { backgroundColor: '#22c55e' }]} />
+          <Text style={cycleStyles.workoutText}>{a}</Text>
+        </View>
+      ))}
+
+      <View style={[cycleStyles.tipCard, { borderLeftColor: '#f59e0b', backgroundColor: '#fffbeb', marginTop: 12 }]}>
+        <Text style={[cycleStyles.tipText, { color: '#92400e' }]}>⚠️ {pp.avoid}</Text>
+      </View>
+
+      <Text style={[cycleStyles.subTitle, { marginTop: 12 }]}>Ona teď může prožívat</Text>
       <View style={cycleStyles.symptomsRow}>
         {pd.expectedSymptoms.map((s, i) => (
           <View key={i} style={cycleStyles.symptomBadge}>

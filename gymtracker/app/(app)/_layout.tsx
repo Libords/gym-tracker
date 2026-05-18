@@ -81,6 +81,8 @@ export default function AppLayout() {
           tabBarIcon: TabIcon('person-outline', 'person'),
         }}
       />
+      {/* Hidden screens — not shown in tab bar */}
+      <Tabs.Screen name="onboarding" options={{ href: null }} />
     </Tabs>
   )
 }

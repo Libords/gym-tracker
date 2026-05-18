@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { ScrollView, View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useAuth } from '../../src/context/AuthContext'
@@ -28,12 +29,21 @@ function formatDuration(started: string, finished: string | null): string {
 export default function Dashboard() {
   const router = useRouter()
   const { signOut } = useAuth()
-  const { profile } = useProfile()
+  const { profile, loading: pLoading } = useProfile()
   const { workouts, loading: wLoading } = useWorkouts()
   const today = new Date().toISOString().split('T')[0]
   const { dailyMacros, loading: nLoading } = useDailyMeals(today)
   const { logs: weightLogs, loading: wgLoading } = useWeightLogs()
-  const { cycleInfo } = useCycleLogs()
+  // For women show personal cycle; for men show partner cycle if enabled
+  const cycleMode = profile?.gender === 'male' ? 'partner' : 'personal'
+  const { cycleInfo } = useCycleLogs(cycleMode)
+
+  // Redirect to onboarding if not completed
+  useEffect(() => {
+    if (!pLoading && profile && !profile.onboarding_done) {
+      router.replace('/(app)/onboarding')
+    }
+  }, [pLoading, profile])
 
   const now = new Date()
   const dateStr = `${DAYS_CS[now.getDay()]}, ${now.getDate()}. ${MONTHS_CS[now.getMonth()]} ${now.getFullYear()}`
@@ -45,7 +55,13 @@ export default function Dashboard() {
     ? (Number(lastWeight.weight_kg) - Number(prevWeight.weight_kg))
     : null
 
-  const caloriePct = Math.min(dailyMacros.calories / 2000, 1)
+  const calorieGoal = profile?.calorie_goal ?? 2000
+  const caloriePct = Math.min(dailyMacros.calories / calorieGoal, 1)
+
+  // Show blank screen while checking onboarding to avoid flash
+  if (pLoading || (profile && !profile.onboarding_done)) {
+    return <View style={{ flex: 1, backgroundColor: '#fff' }} />
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
@@ -89,7 +105,7 @@ export default function Dashboard() {
             <View style={styles.calorieRow}>
               <Text style={styles.calorieNum}>{Math.round(dailyMacros.calories)}</Text>
               <Text style={styles.calorieUnit}>kcal</Text>
-              <Text style={styles.calorieGoal}> / 2 000</Text>
+              <Text style={styles.calorieGoal}> / {calorieGoal.toLocaleString('cs-CZ')}</Text>
             </View>
             <View style={styles.progressBg}>
               <View style={[styles.progressFill, {

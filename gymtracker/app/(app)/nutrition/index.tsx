@@ -5,6 +5,7 @@ import {
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useDailyMeals } from '../../../src/hooks/useNutrition'
+import { useProfile } from '../../../src/hooks/useProfile'
 import { MEAL_LABELS, MealType, calcMacros } from '../../../src/types/nutrition'
 import { MicronutrientsCard } from '../../../src/components/MicronutrientsCard'
 
@@ -31,6 +32,11 @@ export default function NutritionScreen() {
   const [date, setDate] = useState(today)
   const [tab, setTab] = useState<Tab>('makra')
   const { meals, loading, removeMealItem, dailyMacros, dailyMicros } = useDailyMeals(date)
+  const { profile } = useProfile()
+  const calorieGoal = profile?.calorie_goal ?? 2000
+  const proteinGoal = profile?.protein_goal_g ?? 150
+  const carbsGoal = profile?.carbs_goal_g ?? 300
+  const fatGoal = profile?.fat_goal_g ?? 80
 
   const mealTypes: MealType[] = ['snidane', 'obed', 'vecere', 'svacina']
 
@@ -58,11 +64,11 @@ export default function NutritionScreen() {
           <View style={styles.summaryCard}>
             <View style={styles.calorieRow}>
               <Text style={styles.calorieValue}>{Math.round(dailyMacros.calories)}</Text>
-              <Text style={styles.calorieUnit}>kcal</Text>
+              <Text style={styles.calorieUnit}>kcal / {calorieGoal.toLocaleString('cs-CZ')}</Text>
             </View>
-            <MacroBar label="Bílkoviny" value={dailyMacros.protein} max={150} color="#3b82f6" />
-            <MacroBar label="Sacharidy" value={dailyMacros.carbs} max={300} color="#f59e0b" />
-            <MacroBar label="Tuky" value={dailyMacros.fat} max={80} color="#ef4444" />
+            <MacroBar label="Bílkoviny" value={dailyMacros.protein} max={proteinGoal} color="#3b82f6" />
+            <MacroBar label="Sacharidy" value={dailyMacros.carbs} max={carbsGoal} color="#f59e0b" />
+            <MacroBar label="Tuky" value={dailyMacros.fat} max={fatGoal} color="#ef4444" />
           </View>
 
           {/* Meals */}

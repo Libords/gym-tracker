@@ -1,13 +1,29 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import type { JobActivity, TrainingType, Gender } from '../lib/bmr'
 
 export type Profile = {
   id: string
   full_name: string | null
+  // Legacy
   age: number | null
+  // New fields
+  gender: Gender | null
+  birth_year: number | null
   height_cm: number | null
+  current_weight_kg: number | null
   target_weight_kg: number | null
+  job_activity: JobActivity | null
+  training_days_per_week: number | null
+  training_avg_duration_min: number | null
+  training_types: TrainingType[] | null
+  calorie_goal: number | null
+  protein_goal_g: number | null
+  carbs_goal_g: number | null
+  fat_goal_g: number | null
+  has_partner_cycle: boolean
+  onboarding_done: boolean
 }
 
 export function useProfile() {
@@ -23,7 +39,26 @@ export function useProfile() {
       .eq('id', user.id)
       .single()
       .then(({ data }) => {
-        setProfile(data)
+        setProfile(data ?? {
+          id: user.id,
+          full_name: null,
+          age: null,
+          gender: null,
+          birth_year: null,
+          height_cm: null,
+          current_weight_kg: null,
+          target_weight_kg: null,
+          job_activity: null,
+          training_days_per_week: null,
+          training_avg_duration_min: null,
+          training_types: null,
+          calorie_goal: null,
+          protein_goal_g: null,
+          carbs_goal_g: null,
+          fat_goal_g: null,
+          has_partner_cycle: false,
+          onboarding_done: false,
+        })
         setLoading(false)
       })
   }, [user])
