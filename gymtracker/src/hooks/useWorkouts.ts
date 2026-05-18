@@ -63,7 +63,7 @@ export function useWorkoutSets(workoutId: string) {
   const fetchSets = useCallback(async () => {
     const { data } = await supabase
       .from('workout_sets')
-      .select('*, exercise:exercises(id, name, muscle_group)')
+      .select('*, exercise:exercises(id, name, muscle_group, target, equipment, body_part)')
       .eq('workout_id', workoutId)
       .order('set_number')
     setSets(data ?? [])

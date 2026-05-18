@@ -44,3 +44,5 @@ Při FAIL zapsat co selhalo a jak bylo opraveno.
 `2026-05-18 — SQL migrace pro uživatele — profiles (gender/birth_year/weight/job_activity/training_*/calorie_goal/macro_goals/has_partner_cycle/onboarding_done) + cycle_logs (is_partner) — připraveno, uživatel spustil — OK`
 
 `2026-05-18 — spec-kit instalace — uv tool install specify-cli v0.8.11 + specify init gym-tracker --force --integration copilot — OK`
+
+`2026-05-18 — Sprint H komplet — SQL migrace (exercises: body_part/equipment/category/target/secondary_muscles/instructions), seed import 873 cviků z free-exercise-db, useWorkoutSets join rozšířen, UI filtry + detail modal — OK`

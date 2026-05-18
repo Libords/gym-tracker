@@ -88,13 +88,13 @@ Vždy začni čtením tohoto souboru a vyber první nezaškrtnutý bod.
 
 ---
 
-## Sprint H — Exercise Database 🔜 NEXT
+## Sprint H — Exercise Database ✅
 
-- [ ] **H1** — SQL migrace: rozšíření tabulky `exercises` (body_part, equipment, category, secondary_muscles, instructions, target)
-- [ ] **H2** — Seed skript: import 800+ cviků z free-exercise-db (github.com/yuhonas/free-exercise-db)
-- [ ] **H3** — TypeScript typy: rozšíření `Exercise` v `src/types/workout.ts`
-- [ ] **H4** — Hook update: `useWorkouts.ts` — filtrování podle body_part / equipment
-- [ ] **H5** — UI výběru cviků: filtry (partie + vybavení), detail cviku s instrukcemi
+- [x] **H1** — SQL migrace: rozšíření tabulky `exercises` (body_part, equipment, category, secondary_muscles, instructions, target)
+- [x] **H2** — Seed skript: import 873 cviků z free-exercise-db (github.com/yuhonas/free-exercise-db)
+- [x] **H3** — TypeScript typy: rozšíření `Exercise` v `src/types/workout.ts`
+- [x] **H4** — Hook update: `useWorkouts.ts` — join rozšířen o target/equipment/body_part
+- [x] **H5** — UI výběru cviků: filtry (partie), detail cviku s instrukcemi
 
 ---
 
@@ -119,3 +119,4 @@ Vždy začni čtením tohoto souboru a vyber první nezaškrtnutý bod.
 - ✅ **Sprint E1** — Dashboard
 - ✅ **Sprint F1+F2** — Tabs + Onboarding
 - ✅ **Sprint G** — BMR/TDEE + Cyklus
+- ✅ **Sprint H** — Exercise Database (873 cviků)

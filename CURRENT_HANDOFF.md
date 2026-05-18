@@ -98,18 +98,17 @@ EXPO_PUBLIC_USDA_API_KEY=FhMTR3rnYBaEAIe8KbWueatKHZjoBX05mGohVqcW
 
 ---
 
-## Co je NEXT (Sprint H — Exercise Database)
+## Co je NEXT
 
-Plán je uložen v: `C:\Users\libor.slefr\.claude\plans\podle-m-to-bude-binary-ritchie.md`
+**Sprint H — Exercise Database ✅ HOTOVO** (873 cviků importováno z free-exercise-db).
 
-**Shrnutí:**
-1. SQL migrace — rozšíření tabulky `exercises` o sloupce: body_part, equipment, category, secondary_muscles[], instructions[], target
-2. Seed skript `gymtracker/scripts/seed-exercises.ts` — import 800+ cviků z https://github.com/yuhonas/free-exercise-db (public domain JSON)
-3. Rozšíření TypeScript typů v `src/types/workout.ts`
-4. Hook `useWorkouts.ts` — filtrování podle body_part / equipment
-5. UI výběru cviků — filtry (partie + vybavení), detail cviku s instrukcemi
-
-Seed skript potřebuje `SUPABASE_SERVICE_ROLE_KEY` v `.env` (service role obejde RLS).
+**Možnosti dalšího sprintu (vyber dle priority):**
+- **B6** — Historie tréninků (seskupení po dnech)
+- **Sprint I — UI/UX vylepšení** — filtr podle equipment (zatím jen body_part), favorite exercises, recent exercises, GIF/obrázky cviků
+- **E2** — Přehledy tréninků (PR, volume, frekvence)
+- **E3** — Přehledy výživy (průměry za týden/měsíc)
+- **F3** — Push notifikace (připomínka tréninku/jídla)
+- **F4** — Offline podpora
 
 ---
 
@@ -150,6 +149,5 @@ npx tsc --noEmit
 ## Jak pokračovat v nové konverzaci
 
 1. Přečti tento soubor (CURRENT_HANDOFF.md)
-2. Přečti PROJECT_PLAN.md — viz sekce "Sprint H — Exercise Database" = NEXT
-3. Použij spec-kit: `/speckit.specify` pro popis feature Exercise DB z pohledu uživatele
-4. Pak `/speckit.clarify`, `/speckit.plan`, `/speckit.tasks`, `/speckit.implement`
+2. Přečti PROJECT_PLAN.md — vyber první nezaškrtnutý bod z roadmapy nebo z "Možnosti dalšího sprintu" výše
+3. Pro novou feature použij spec-kit: `/speckit.specify` → `/speckit.clarify` → `/speckit.plan` → `/speckit.tasks` → `/speckit.implement`
