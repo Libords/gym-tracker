@@ -5,8 +5,17 @@ import {
 } from 'react-native'
 import { LineChart } from 'react-native-gifted-charts'
 import { useWeightLogs, useBodyMeasurements } from '../../../src/hooks/useProgress'
+import { useCycleLogs } from '../../../src/hooks/useCycle'
+import type { CycleInfo, CyclePhase } from '../../../src/types/cycle'
+import { PHASE_DATA, buildCycleTimeline } from '../../../src/types/cycle'
 
-type Tab = 'vaha' | 'miry'
+type Tab = 'vaha' | 'miry' | 'cyklus'
+
+const TAB_LABELS: Record<Tab, string> = {
+  vaha: '⚖️ Váha',
+  miry: '📏 Míry',
+  cyklus: '🌙 Cyklus',
+}
 
 export default function ProgressScreen() {
   const [tab, setTab] = useState<Tab>('vaha')
@@ -15,10 +24,14 @@ export default function ProgressScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Progress</Text>
       <View style={styles.tabs}>
-        {(['vaha', 'miry'] as Tab[]).map(t => (
-          <TouchableOpacity key={t} style={[styles.tab, tab === t && styles.tabActive]} onPress={() => setTab(t)}>
+        {(['vaha', 'miry', 'cyklus'] as Tab[]).map(t => (
+          <TouchableOpacity
+            key={t}
+            style={[styles.tab, tab === t && styles.tabActive]}
+            onPress={() => setTab(t)}
+          >
             <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
-              {t === 'vaha' ? '⚖️ Váha' : '📏 Míry'}
+              {TAB_LABELS[t]}
             </Text>
           </TouchableOpacity>
         ))}
@@ -26,9 +39,12 @@ export default function ProgressScreen() {
 
       {tab === 'vaha' && <WeightTab />}
       {tab === 'miry' && <MeasurementsTab />}
+      {tab === 'cyklus' && <CycleTab />}
     </View>
   )
 }
+
+// ─── Weight tab ───────────────────────────────────────────────────────────────
 
 function WeightTab() {
   const { logs, loading, addLog, deleteLog } = useWeightLogs()
@@ -80,7 +96,10 @@ function WeightTab() {
         <View key={log.id} style={styles.logRow}>
           <View style={{ flex: 1 }}>
             <Text style={styles.logValue}>{log.weight_kg} kg</Text>
-            <Text style={styles.logDate}>{new Date(log.date).toLocaleDateString('cs-CZ')}{log.note ? `  •  ${log.note}` : ''}</Text>
+            <Text style={styles.logDate}>
+              {new Date(log.date).toLocaleDateString('cs-CZ')}
+              {log.note ? `  •  ${log.note}` : ''}
+            </Text>
           </View>
           <TouchableOpacity onPress={() => Alert.alert('Smazat?', '', [
             { text: 'Zrušit', style: 'cancel' },
@@ -114,11 +133,15 @@ function WeightTab() {
   )
 }
 
+// ─── Measurements tab ─────────────────────────────────────────────────────────
+
 function MeasurementsTab() {
   const { measurements, loading, addMeasurement, deleteMeasurement } = useBodyMeasurements()
   const [modalVisible, setModalVisible] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [vals, setVals] = useState({ chest_cm: '', waist_cm: '', hips_cm: '', arm_cm: '', thigh_cm: '', neck_cm: '', note: '' })
+  const [vals, setVals] = useState({
+    chest_cm: '', waist_cm: '', hips_cm: '', arm_cm: '', thigh_cm: '', neck_cm: '', note: '',
+  })
 
   const fields: { key: keyof typeof vals; label: string }[] = [
     { key: 'chest_cm', label: 'Hrudník (cm)' },
@@ -205,13 +228,355 @@ function MeasurementsTab() {
   )
 }
 
+// ─── Cycle tab ────────────────────────────────────────────────────────────────
+
+function CycleTab() {
+  const { logs, loading, addLog, deleteLog, cycleInfo, latestCycleLength, latestPeriodLength } = useCycleLogs()
+  const [modalVisible, setModalVisible] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [periodDate, setPeriodDate] = useState(new Date().toISOString().split('T')[0])
+  const [cycleLen, setCycleLen] = useState(String(latestCycleLength))
+  const [periodLen, setPeriodLen] = useState(String(latestPeriodLength))
+  const [logNote, setLogNote] = useState('')
+  const [section, setSection] = useState<'training' | 'nutrition'>('training')
+
+  const handleAdd = async () => {
+    setSaving(true)
+    await addLog(periodDate, parseInt(cycleLen) || 28, parseInt(periodLen) || 5, logNote || undefined)
+    setSaving(false)
+    setModalVisible(false)
+    setLogNote('')
+  }
+
+  if (loading) return <ActivityIndicator style={{ marginTop: 40 }} />
+
+  return (
+    <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+      {!cycleInfo ? (
+        // ── Onboarding ──
+        <View style={cycleStyles.onboarding}>
+          <Text style={cycleStyles.onboardingEmoji}>🌙</Text>
+          <Text style={cycleStyles.onboardingTitle}>Sledování cyklu</Text>
+          <Text style={cycleStyles.onboardingText}>
+            Zadej první den poslední menstruace a aplikace ti bude doporučovat tréninky a výživu
+            přizpůsobené tvé aktuální fázi cyklu.
+          </Text>
+          <TouchableOpacity style={cycleStyles.onboardingBtn} onPress={() => setModalVisible(true)}>
+            <Text style={cycleStyles.onboardingBtnText}>Zadat první menstruaci</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <>
+          <PhaseHeader info={cycleInfo} />
+          <CycleTimeline logs={logs} info={cycleInfo} />
+
+          {/* Section switcher */}
+          <View style={cycleStyles.sectionTabs}>
+            <TouchableOpacity
+              style={[cycleStyles.sectionTab, section === 'training' && cycleStyles.sectionTabActive]}
+              onPress={() => setSection('training')}
+            >
+              <Text style={[cycleStyles.sectionTabText, section === 'training' && cycleStyles.sectionTabTextActive]}>
+                💪 Trénink
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[cycleStyles.sectionTab, section === 'nutrition' && cycleStyles.sectionTabActive]}
+              onPress={() => setSection('nutrition')}
+            >
+              <Text style={[cycleStyles.sectionTabText, section === 'nutrition' && cycleStyles.sectionTabTextActive]}>
+                🥗 Výživa
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {section === 'training'
+            ? <TrainingSection info={cycleInfo} />
+            : <NutritionSection info={cycleInfo} />
+          }
+
+          {/* Log history */}
+          <Text style={cycleStyles.sectionTitle}>Historie cyklů</Text>
+          {logs.map(log => (
+            <View key={log.id} style={cycleStyles.historyRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={cycleStyles.historyDate}>
+                  {new Date(log.period_start).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </Text>
+                <Text style={cycleStyles.historyMeta}>
+                  Délka cyklu: {log.cycle_length} dní  •  Menstruace: {log.period_length} dní
+                </Text>
+              </View>
+              <TouchableOpacity onPress={() => Alert.alert('Smazat záznam?', '', [
+                { text: 'Zrušit', style: 'cancel' },
+                { text: 'Smazat', style: 'destructive', onPress: () => deleteLog(log.id) },
+              ])}>
+                <Text style={styles.deleteBtn}>✕</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </>
+      )}
+
+      {/* FAB */}
+      <TouchableOpacity style={[styles.fab, { backgroundColor: '#8b5cf6' }]} onPress={() => setModalVisible(true)}>
+        <Text style={styles.fabText}>+ Zadat menstruaci</Text>
+      </TouchableOpacity>
+
+      {/* Add modal */}
+      <Modal visible={modalVisible} transparent animationType="fade">
+        <View style={styles.overlay}>
+          <View style={styles.modal}>
+            <Text style={styles.modalTitle}>Nová menstruace</Text>
+
+            <Text style={cycleStyles.inputLabel}>První den menstruace</Text>
+            <TextInput
+              style={styles.input}
+              value={periodDate}
+              onChangeText={setPeriodDate}
+              placeholder="RRRR-MM-DD"
+            />
+
+            <View style={cycleStyles.twoCol}>
+              <View style={{ flex: 1, marginRight: 6 }}>
+                <Text style={cycleStyles.inputLabel}>Délka cyklu (dny)</Text>
+                <TextInput style={styles.input} value={cycleLen} onChangeText={setCycleLen} keyboardType="number-pad" />
+              </View>
+              <View style={{ flex: 1, marginLeft: 6 }}>
+                <Text style={cycleStyles.inputLabel}>Délka menstruace (dny)</Text>
+                <TextInput style={styles.input} value={periodLen} onChangeText={setPeriodLen} keyboardType="number-pad" />
+              </View>
+            </View>
+
+            <TextInput style={styles.input} placeholder="Poznámka (volitelně)" value={logNote} onChangeText={setLogNote} />
+
+            <View style={styles.modalRow}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
+                <Text>Zrušit</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.confirmBtn, { backgroundColor: '#8b5cf6' }]} onPress={handleAdd} disabled={saving}>
+                {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.confirmText}>Uložit</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </ScrollView>
+  )
+}
+
+// ─── Phase header ─────────────────────────────────────────────────────────────
+
+function PhaseHeader({ info }: { info: CycleInfo }) {
+  const pd = PHASE_DATA[info.phase]
+  const progressPct = info.dayInCycle / info.cycleLength
+
+  return (
+    <View style={[cycleStyles.phaseCard, { backgroundColor: pd.colorLight, borderColor: pd.color }]}>
+      <View style={cycleStyles.phaseRow}>
+        <Text style={cycleStyles.phaseEmoji}>{pd.emoji}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={[cycleStyles.phaseName, { color: pd.color }]}>{pd.name}</Text>
+          <Text style={cycleStyles.phaseDay}>Den {info.dayInCycle} z {info.cycleLength}</Text>
+        </View>
+        <View style={cycleStyles.countdownBox}>
+          <Text style={[cycleStyles.countdownNum, { color: pd.color }]}>{info.daysUntilNextPeriod}</Text>
+          <Text style={cycleStyles.countdownLabel}>dní do{'\n'}menstruace</Text>
+        </View>
+      </View>
+
+      {/* Cycle progress bar */}
+      <View style={cycleStyles.progressBg}>
+        <View style={[cycleStyles.progressFill, { width: `${progressPct * 100}%` as any, backgroundColor: pd.color }]} />
+      </View>
+
+      {/* Energy + intensity */}
+      <View style={cycleStyles.energyRow}>
+        <EnergyDots label="Energie" value={pd.energyLevel} color={pd.color} />
+        <EnergyDots label="Intenzita tréninku" value={pd.trainingIntensity} color={pd.color} />
+      </View>
+
+      {info.isLutealLate && (
+        <View style={cycleStyles.pmsBadge}>
+          <Text style={cycleStyles.pmsBadgeText}>⚡ PMS okno — posledních 7 dní cyklu</Text>
+        </View>
+      )}
+
+      {info.daysUntilOvulation !== null && info.daysUntilOvulation <= 3 && (
+        <View style={[cycleStyles.pmsBadge, { backgroundColor: '#fffbeb' }]}>
+          <Text style={[cycleStyles.pmsBadgeText, { color: '#92400e' }]}>
+            ⭐ Ovulace za {info.daysUntilOvulation === 0 ? 'méně než den' : `${info.daysUntilOvulation} dní`}
+          </Text>
+        </View>
+      )}
+
+      <Text style={cycleStyles.wellbeingTip}>{pd.wellbeingTip}</Text>
+    </View>
+  )
+}
+
+function EnergyDots({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <View style={cycleStyles.energyItem}>
+      <Text style={cycleStyles.energyLabel}>{label}</Text>
+      <View style={cycleStyles.dots}>
+        {[1, 2, 3, 4, 5].map(i => (
+          <View key={i} style={[cycleStyles.dot, i <= value ? { backgroundColor: color } : {}]} />
+        ))}
+      </View>
+    </View>
+  )
+}
+
+// ─── Cycle timeline ───────────────────────────────────────────────────────────
+
+function CycleTimeline({ logs, info }: { logs: { period_start: string; cycle_length: number; period_length: number }[]; info: CycleInfo }) {
+  if (logs.length === 0) return null
+  const first = logs[logs.length - 1]
+  const timeline = buildCycleTimeline(logs[0].period_start, info.cycleLength, info.periodLength, 35)
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const COLORS: Record<CyclePhase, string> = {
+    menstrual: '#ef4444',
+    follicular: '#22c55e',
+    ovulation: '#f59e0b',
+    luteal: '#8b5cf6',
+  }
+
+  return (
+    <View style={cycleStyles.timelineContainer}>
+      <Text style={cycleStyles.sectionTitle}>Nadcházejících 35 dní</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <View style={{ flexDirection: 'row', paddingVertical: 4 }}>
+          {timeline.map((item, i) => {
+            const isToday = item.date.getTime() === today.getTime()
+            return (
+              <View key={i} style={cycleStyles.timelineDay}>
+                <View style={[
+                  cycleStyles.timelineDot,
+                  { backgroundColor: COLORS[item.phase] },
+                  isToday && cycleStyles.timelineDotToday,
+                ]} />
+                <Text style={[cycleStyles.timelineDayNum, isToday && { color: COLORS[item.phase], fontWeight: '700' }]}>
+                  {item.date.getDate()}
+                </Text>
+                {item.date.getDay() === 1 && (
+                  <Text style={cycleStyles.timelineMonth}>
+                    {item.date.toLocaleDateString('cs-CZ', { month: 'short' })}
+                  </Text>
+                )}
+              </View>
+            )
+          })}
+        </View>
+      </ScrollView>
+      {/* Legend */}
+      <View style={cycleStyles.legend}>
+        {(['menstrual', 'follicular', 'ovulation', 'luteal'] as CyclePhase[]).map(p => (
+          <View key={p} style={cycleStyles.legendItem}>
+            <View style={[cycleStyles.legendDot, { backgroundColor: COLORS[p] }]} />
+            <Text style={cycleStyles.legendText}>{PHASE_DATA[p].name}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  )
+}
+
+// ─── Training section ─────────────────────────────────────────────────────────
+
+function TrainingSection({ info }: { info: CycleInfo }) {
+  const pd = PHASE_DATA[info.phase]
+
+  return (
+    <View style={cycleStyles.section}>
+      <Text style={cycleStyles.sectionTitle}>💪 Doporučení tréninku</Text>
+
+      <View style={[cycleStyles.tipCard, { borderLeftColor: pd.color }]}>
+        <Text style={cycleStyles.tipText}>{pd.trainingTip}</Text>
+      </View>
+
+      {pd.trainingWarning && (
+        <View style={[cycleStyles.tipCard, { borderLeftColor: '#f59e0b', backgroundColor: '#fffbeb' }]}>
+          <Text style={[cycleStyles.tipText, { color: '#92400e' }]}>{pd.trainingWarning}</Text>
+        </View>
+      )}
+
+      <Text style={cycleStyles.subTitle}>Doporučené aktivity</Text>
+      {pd.workouts.map((w, i) => (
+        <View key={i} style={cycleStyles.workoutRow}>
+          <View style={[cycleStyles.workoutDot, { backgroundColor: pd.color }]} />
+          <Text style={cycleStyles.workoutText}>{w}</Text>
+        </View>
+      ))}
+    </View>
+  )
+}
+
+// ─── Nutrition section ────────────────────────────────────────────────────────
+
+function NutritionSection({ info }: { info: CycleInfo }) {
+  const pd = PHASE_DATA[info.phase]
+
+  return (
+    <View style={cycleStyles.section}>
+      <Text style={cycleStyles.sectionTitle}>🥗 Výživová doporučení</Text>
+
+      <View style={[cycleStyles.tipCard, { borderLeftColor: pd.color }]}>
+        <Text style={cycleStyles.tipText}>{pd.nutritionTip}</Text>
+      </View>
+
+      <Text style={cycleStyles.subTitle}>Zaměř se na</Text>
+      <View style={cycleStyles.focusRow}>
+        {pd.nutritionFocus.map((f, i) => (
+          <View key={i} style={[cycleStyles.focusBadge, { backgroundColor: pd.colorLight, borderColor: pd.color }]}>
+            <Text style={[cycleStyles.focusBadgeText, { color: pd.color }]}>{f}</Text>
+          </View>
+        ))}
+      </View>
+
+      <Text style={cycleStyles.subTitle}>✅ Více jez</Text>
+      {pd.eatMore.map((item, i) => (
+        <View key={i} style={cycleStyles.foodRow}>
+          <Text style={cycleStyles.foodEmoji}>{item.emoji}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={cycleStyles.foodName}>{item.food}</Text>
+            <Text style={cycleStyles.foodReason}>{item.reason}</Text>
+          </View>
+        </View>
+      ))}
+
+      <Text style={[cycleStyles.subTitle, { marginTop: 12 }]}>❌ Omez nebo vyřaď</Text>
+      {pd.eatLess.map((item, i) => (
+        <View key={i} style={[cycleStyles.foodRow, { opacity: 0.8 }]}>
+          <Text style={cycleStyles.foodEmoji}>{item.emoji}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={cycleStyles.foodName}>{item.food}</Text>
+            <Text style={cycleStyles.foodReason}>{item.reason}</Text>
+          </View>
+        </View>
+      ))}
+
+      <Text style={cycleStyles.subTitle}>Očekávané příznaky</Text>
+      <View style={cycleStyles.symptomsRow}>
+        {pd.expectedSymptoms.map((s, i) => (
+          <View key={i} style={cycleStyles.symptomBadge}>
+            <Text style={cycleStyles.symptomText}>{s}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  )
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 16, paddingTop: 16 },
   title: { fontSize: 26, fontWeight: 'bold', marginBottom: 12 },
-  tabs: { flexDirection: 'row', marginBottom: 16, gap: 8 },
-  tab: { flex: 1, padding: 10, borderRadius: 10, borderWidth: 1, borderColor: '#ddd', alignItems: 'center' },
+  tabs: { flexDirection: 'row', marginBottom: 16, gap: 6 },
+  tab: { flex: 1, paddingVertical: 9, paddingHorizontal: 4, borderRadius: 10, borderWidth: 1, borderColor: '#ddd', alignItems: 'center' },
   tabActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  tabText: { fontSize: 13, color: '#555' },
+  tabText: { fontSize: 11, color: '#555', textAlign: 'center' },
   tabTextActive: { color: '#fff', fontWeight: '600' },
   chartContainer: { alignItems: 'center', marginBottom: 16, backgroundColor: '#f8f9fa', borderRadius: 12, padding: 12 },
   logRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderColor: '#f0f0f0' },
@@ -232,4 +597,83 @@ const styles = StyleSheet.create({
   cancelBtn: { flex: 1, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#ddd', alignItems: 'center' },
   confirmBtn: { flex: 1, padding: 12, borderRadius: 10, backgroundColor: '#2563eb', alignItems: 'center' },
   confirmText: { color: '#fff', fontWeight: '600' },
+})
+
+const cycleStyles = StyleSheet.create({
+  onboarding: { alignItems: 'center', paddingTop: 40, paddingBottom: 120 },
+  onboardingEmoji: { fontSize: 64, marginBottom: 16 },
+  onboardingTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 10, color: '#1a1a1a' },
+  onboardingText: { color: '#666', fontSize: 14, textAlign: 'center', lineHeight: 22, paddingHorizontal: 8, marginBottom: 28 },
+  onboardingBtn: { backgroundColor: '#8b5cf6', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 32 },
+  onboardingBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+
+  phaseCard: { borderRadius: 16, borderWidth: 2, padding: 16, marginBottom: 16 },
+  phaseRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  phaseEmoji: { fontSize: 36, marginRight: 12 },
+  phaseName: { fontSize: 20, fontWeight: 'bold' },
+  phaseDay: { color: '#888', fontSize: 13, marginTop: 2 },
+  countdownBox: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 10, padding: 8 },
+  countdownNum: { fontSize: 28, fontWeight: 'bold' },
+  countdownLabel: { fontSize: 10, color: '#666', textAlign: 'center' },
+
+  progressBg: { height: 8, backgroundColor: 'rgba(0,0,0,0.08)', borderRadius: 4, marginBottom: 12 },
+  progressFill: { height: 8, borderRadius: 4 },
+
+  energyRow: { flexDirection: 'row', gap: 12, marginBottom: 10 },
+  energyItem: { flex: 1 },
+  energyLabel: { fontSize: 11, color: '#888', marginBottom: 3 },
+  dots: { flexDirection: 'row', gap: 4 },
+  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#e2e8f0' },
+
+  pmsBadge: { backgroundColor: '#f3e8ff', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, marginBottom: 8 },
+  pmsBadgeText: { color: '#6d28d9', fontSize: 12, fontWeight: '600' },
+  wellbeingTip: { color: '#555', fontSize: 12, lineHeight: 18, marginTop: 4, fontStyle: 'italic' },
+
+  timelineContainer: { marginBottom: 16 },
+  timelineDay: { alignItems: 'center', width: 28, marginRight: 2 },
+  timelineDot: { width: 10, height: 10, borderRadius: 5, marginBottom: 3 },
+  timelineDotToday: { width: 14, height: 14, borderRadius: 7, borderWidth: 2, borderColor: '#1a1a1a' },
+  timelineDayNum: { fontSize: 9, color: '#888' },
+  timelineMonth: { fontSize: 8, color: '#bbb', marginTop: 1 },
+  legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  legendDot: { width: 8, height: 8, borderRadius: 4 },
+  legendText: { fontSize: 10, color: '#666' },
+
+  sectionTabs: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  sectionTab: { flex: 1, padding: 10, borderRadius: 10, borderWidth: 1, borderColor: '#ddd', alignItems: 'center' },
+  sectionTabActive: { backgroundColor: '#8b5cf6', borderColor: '#8b5cf6' },
+  sectionTabText: { fontSize: 13, color: '#555' },
+  sectionTabTextActive: { color: '#fff', fontWeight: '600' },
+
+  section: { marginBottom: 16 },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#1a1a1a', marginBottom: 10 },
+  subTitle: { fontSize: 13, fontWeight: '600', color: '#555', marginTop: 10, marginBottom: 6 },
+
+  tipCard: { borderLeftWidth: 3, backgroundColor: '#f8f9fa', borderRadius: 8, padding: 12, marginBottom: 10 },
+  tipText: { color: '#444', fontSize: 13, lineHeight: 20 },
+
+  workoutRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  workoutDot: { width: 6, height: 6, borderRadius: 3, marginRight: 10 },
+  workoutText: { fontSize: 14, color: '#333' },
+
+  focusRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 4 },
+  focusBadge: { borderWidth: 1, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+  focusBadgeText: { fontSize: 12, fontWeight: '600' },
+
+  foodRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 },
+  foodEmoji: { fontSize: 20, marginRight: 10, marginTop: 1 },
+  foodName: { fontSize: 14, fontWeight: '500', color: '#222' },
+  foodReason: { fontSize: 12, color: '#888', marginTop: 1 },
+
+  symptomsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  symptomBadge: { backgroundColor: '#f1f5f9', borderRadius: 16, paddingHorizontal: 10, paddingVertical: 4 },
+  symptomText: { fontSize: 12, color: '#555' },
+
+  historyRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderColor: '#f0f0f0' },
+  historyDate: { fontSize: 14, fontWeight: '500', color: '#333' },
+  historyMeta: { fontSize: 12, color: '#888', marginTop: 2 },
+
+  twoCol: { flexDirection: 'row' },
+  inputLabel: { fontSize: 12, color: '#666', marginBottom: 4, marginTop: 4 },
 })
