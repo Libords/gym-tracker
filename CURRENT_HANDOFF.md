@@ -134,12 +134,22 @@ spec-kit v0.8.11 je nainstalován. Používat pro všechny nové featury:
 ## Jak spustit projekt
 
 ```powershell
-cd C:\Users\libor.slefr\gym-tracker\gymtracker
+cd gym-tracker\gymtracker
 npx expo start
 
 # Type check
 npx tsc --noEmit
 ```
+
+### První spuštění na novém PC (pro Claude)
+
+Pokud `gymtracker/.env` neexistuje (čerstvý clone), zeptej se uživatele na hodnoty a vytvoř soubor přes Edit tool (předloha v `.env.example`). Potřebuješ:
+- `EXPO_PUBLIC_SUPABASE_URL`
+- `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` (jen pro seed skripty, ne pro app runtime)
+- `EXPO_PUBLIC_USDA_API_KEY`
+
+Pak spusť `npm install` v `gymtracker/`.
 
 ---
 
