@@ -73,7 +73,12 @@ export default function WorkoutsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Tréninky</Text>
+      <View style={styles.titleRow}>
+        <Text style={styles.title}>Tréninky</Text>
+        <TouchableOpacity style={styles.tplBtn} onPress={() => router.push('/(app)/workouts/templates')}>
+          <Text style={styles.tplBtnText}>Šablony</Text>
+        </TouchableOpacity>
+      </View>
 
       {sections.length === 0 ? (
         <Text style={styles.empty}>Zatím žádné tréninky. Začni svůj první!</Text>
@@ -124,7 +129,10 @@ export default function WorkoutsScreen() {
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 16, paddingTop: 16 },
-  title: { fontSize: 26, fontWeight: 'bold', marginBottom: 12 },
+  title: { fontSize: 26, fontWeight: 'bold' },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  tplBtn: { borderWidth: 1, borderColor: '#2563eb', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 },
+  tplBtnText: { color: '#2563eb', fontWeight: '600', fontSize: 13 },
   sectionHeader: { fontSize: 13, fontWeight: '600', color: '#888', textTransform: 'uppercase', marginTop: 16, marginBottom: 6 },
   card: { backgroundColor: '#f8f9fa', borderRadius: 12, padding: 14, marginBottom: 8 },
   cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
