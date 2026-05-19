@@ -1,10 +1,13 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  TextInput, Modal, Alert, ActivityIndicator, ScrollView,
+  TextInput, Modal, Alert, ActivityIndicator, ScrollView, Linking,
 } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useWorkoutSets, useExercises, useWorkouts } from '../../../src/hooks/useWorkouts'
+import { useRestTimer } from '../../../src/hooks/useRestTimer'
+import { useProfile } from '../../../src/hooks/useProfile'
+import { RestTimer } from '../../../src/components/workouts/RestTimer'
 import type { Exercise } from '../../../src/types/workout'
 
 const BODY_PARTS = ['Vše', 'chest', 'back', 'upper legs', 'lower legs', 'upper arms', 'lower arms', 'shoulders', 'waist', 'cardio']
@@ -20,6 +23,9 @@ export default function WorkoutDetailScreen() {
   const { sets, loading, addSet, removeSet } = useWorkoutSets(id)
   const { exercises } = useExercises()
   const { workouts, finishWorkout } = useWorkouts()
+  const { profile } = useProfile()
+  const restTimer = useRestTimer()
+  const permissionDialogShownRef = useRef(false)
   const workout = workouts.find(w => w.id === id)
 
   const [addModalVisible, setAddModalVisible] = useState(false)
@@ -56,6 +62,24 @@ export default function WorkoutDetailScreen() {
     setSelectedExercise(null)
     setReps('')
     setWeight('')
+    // Start rest timer
+    const restSec = profile?.default_rest_seconds ?? 90
+    await restTimer.start(id, restSec)
+    // Permission denied dialog (once per session)
+    if (!permissionDialogShownRef.current) {
+      const status = await restTimer.ensureNotificationPermission()
+      if (status === 'denied') {
+        permissionDialogShownRef.current = true
+        Alert.alert(
+          'Notifikace zakázané',
+          'Bez notifikace tě neupozorníme na konec pauzy, když app není v popředí.',
+          [
+            { text: 'Zrušit', style: 'cancel' },
+            { text: 'Otevřít nastavení', onPress: () => { Linking.openSettings() } },
+          ],
+        )
+      }
+    }
   }
 
   const handleFinish = () => {
@@ -91,6 +115,14 @@ export default function WorkoutDetailScreen() {
           </TouchableOpacity>
         )}
       </View>
+
+      <RestTimer
+        state={restTimer.state}
+        onExtend={restTimer.extend}
+        onPause={restTimer.pause}
+        onResume={restTimer.resume}
+        onSkip={restTimer.skip}
+      />
 
       <FlatList
         data={sets}
