@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import type { JobActivity, TrainingType, Gender } from '../lib/bmr'
+import type { Unit } from '../types/workout'
 
 export type Profile = {
   id: string
@@ -24,6 +25,8 @@ export type Profile = {
   fat_goal_g: number | null
   has_partner_cycle: boolean
   onboarding_done: boolean
+  default_rest_seconds: number
+  preferred_unit: Unit
 }
 
 export function useProfile() {
@@ -58,6 +61,8 @@ export function useProfile() {
           fat_goal_g: null,
           has_partner_cycle: false,
           onboarding_done: false,
+          default_rest_seconds: 90,
+          preferred_unit: 'kg',
         })
         setLoading(false)
       })

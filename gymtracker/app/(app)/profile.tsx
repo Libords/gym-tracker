@@ -10,6 +10,7 @@ import {
   JOB_ACTIVITY_LABELS, TRAINING_TYPE_LABELS,
 } from '../../src/lib/bmr'
 import type { JobActivity, TrainingType, Gender } from '../../src/lib/bmr'
+import type { Unit } from '../../src/types/workout'
 
 export default function ProfileScreen() {
   const { profile, loading, updateProfile } = useProfile()
@@ -30,6 +31,8 @@ export default function ProfileScreen() {
   const [carbsGoal, setCarbsGoal] = useState('')
   const [fatGoal, setFatGoal] = useState('')
   const [hasPartnerCycle, setHasPartnerCycle] = useState(false)
+  const [defaultRestSeconds, setDefaultRestSeconds] = useState('90')
+  const [preferredUnit, setPreferredUnit] = useState<Unit>('kg')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -49,6 +52,8 @@ export default function ProfileScreen() {
     setCarbsGoal(profile.carbs_goal_g?.toString() ?? '')
     setFatGoal(profile.fat_goal_g?.toString() ?? '')
     setHasPartnerCycle(profile.has_partner_cycle ?? false)
+    setDefaultRestSeconds(String(profile.default_rest_seconds ?? 90))
+    setPreferredUnit(profile.preferred_unit ?? 'kg')
   }, [profile])
 
   const toggleType = (t: TrainingType) => {
@@ -90,6 +95,8 @@ export default function ProfileScreen() {
       carbs_goal_g: carbsGoal ? parseInt(carbsGoal) : null,
       fat_goal_g: fatGoal ? parseInt(fatGoal) : null,
       has_partner_cycle: hasPartnerCycle,
+      default_rest_seconds: clampRest(defaultRestSeconds),
+      preferred_unit: preferredUnit,
     })
     setSaving(false)
     if (error) Alert.alert('Chyba', error.message)
@@ -216,6 +223,26 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      {/* Workout settings (Sprint I) */}
+      <SectionHeader title="Nastavení tréninku" />
+      <Label text="Jednotka váhy" />
+      <View style={styles.row}>
+        {(['kg', 'lb'] as Unit[]).map(u => (
+          <TouchableOpacity key={u} style={[styles.chip, preferredUnit === u && styles.chipActive]} onPress={() => setPreferredUnit(u)}>
+            <Text style={[styles.chipText, preferredUnit === u && styles.chipTextActive]}>{u.toUpperCase()}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <Label text="Výchozí délka pauzy (s)" />
+      <TextInput
+        style={styles.input}
+        value={defaultRestSeconds}
+        onChangeText={setDefaultRestSeconds}
+        keyboardType="numeric"
+        placeholder="90"
+      />
+
       {/* Partner cycle — only for men */}
       {gender === 'male' && (
         <>
@@ -243,6 +270,12 @@ export default function ProfileScreen() {
 
 function SectionHeader({ title }: { title: string }) {
   return <Text style={styles.sectionHeader}>{title}</Text>
+}
+
+function clampRest(text: string): number {
+  const n = parseInt(text, 10)
+  if (Number.isNaN(n)) return 90
+  return Math.min(600, Math.max(5, n))
 }
 function Label({ text }: { text: string }) {
   return <Text style={styles.label}>{text}</Text>
