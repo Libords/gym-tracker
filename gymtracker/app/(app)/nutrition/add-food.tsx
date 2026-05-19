@@ -4,7 +4,7 @@ import {
   FlatList, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Modal, ScrollView,
 } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { BarCodeScanner } from 'expo-barcode-scanner'
+import { CameraView, useCameraPermissions } from 'expo-camera'
 import { useDailyMeals, searchOpenFoodFacts, fetchByBarcode, searchUSDA } from '../../../src/hooks/useNutrition'
 import type { FoodItem, MealType } from '../../../src/types/nutrition'
 import { calcMicros } from '../../../src/types/nutrition'
@@ -22,7 +22,7 @@ export default function AddFoodScreen() {
   const [results, setResults] = useState<FoodItem[]>([])
   const [searching, setSearching] = useState(false)
   const [scannerVisible, setScannerVisible] = useState(false)
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null)
+  const [permission, requestPermission] = useCameraPermissions()
   const [scanned, setScanned] = useState(false)
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null)
   const [amount, setAmount] = useState('100')
@@ -40,8 +40,14 @@ export default function AddFoodScreen() {
   }
 
   const openScanner = async () => {
-    const { status } = await BarCodeScanner.requestPermissionsAsync()
-    setHasPermission(status === 'granted')
+    if (!permission?.granted) {
+      const result = await requestPermission()
+      if (!result.granted) {
+        setScannerVisible(true)
+        return
+      }
+    }
+    setScanned(false)
     setScannerVisible(true)
   }
 
@@ -207,11 +213,14 @@ export default function AddFoodScreen() {
       {/* Barcode Scanner Modal */}
       <Modal visible={scannerVisible} animationType="slide">
         <View style={styles.scannerContainer}>
-          {hasPermission === false ? (
+          {!permission?.granted ? (
             <Text style={styles.permissionText}>Přístup ke kameře byl zamítnut.</Text>
           ) : (
-            <BarCodeScanner
-              onBarCodeScanned={scanned ? undefined : handleBarcode}
+            <CameraView
+              onBarcodeScanned={scanned ? undefined : handleBarcode}
+              barcodeScannerSettings={{
+                barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'code39'],
+              }}
               style={StyleSheet.absoluteFillObject}
             />
           )}

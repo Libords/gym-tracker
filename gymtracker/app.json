@@ -29,7 +29,12 @@
     },
     "plugins": [
       "expo-router",
-      "expo-barcode-scanner",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Aplikace potřebuje přístup ke kameře pro skenování čárových kódů potravin."
+        }
+      ],
       "expo-notifications"
     ],
     "scheme": "gymtracker"
