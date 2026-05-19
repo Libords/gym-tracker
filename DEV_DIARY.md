@@ -46,3 +46,25 @@ Při FAIL zapsat co selhalo a jak bylo opraveno.
 `2026-05-18 — spec-kit instalace — uv tool install specify-cli v0.8.11 + specify init gym-tracker --force --integration copilot — OK`
 
 `2026-05-18 — Sprint H komplet — SQL migrace (exercises: body_part/equipment/category/target/secondary_muscles/instructions), seed import 873 cviků z free-exercise-db, useWorkoutSets join rozšířen, UI filtry + detail modal — OK`
+
+---
+
+## 2026-05-19 — Sprint I (Workout UX Polish)
+
+`2026-05-19 — Sprint I spec — /speckit-specify + /speckit-clarify (Strong-style templates, kg/lb pref, US4 drop "Repeat last") — OK`
+
+`2026-05-19 — Sprint I plan + tasks — research.md (9 R-otázek), data-model.md, contracts/ (db-schema.sql + 4 TS contracts), tasks.md (40 tasks v 7 fázích), /speckit-analyze pass — OK`
+
+`2026-05-19 — Sprint I Phase 1 Setup (T001-T003) — npx expo install expo-notifications/expo-haptics/expo-av/react-native-draggable-flatlist/react-native-reanimated/react-native-gesture-handler, app.json plugin "expo-notifications", supabase/migrations/ folder — OK`
+
+`2026-05-19 — Sprint I Phase 2 Foundational (T004-T011) — Supabase migrace 20260520_workout_templates_and_units.sql (workout_templates + template_exercises + profiles.default_rest_seconds/preferred_unit + workouts.template_id + RLS policies), aplikovaná uživatelem; types extension (WorkoutTemplate/TemplateExercise/Unit/EquipmentChip), units.ts (LB_PER_KG=2.20462), equipmentMapping.ts (8 canonical chipů), useUnitPreference hook, WeightInput komponenta, profile.tsx "Nastavení tréninku" sekce (kg/lb segmented + default_rest_seconds 5-600) — OK`
+
+`2026-05-19 — Sprint I US1 Workout Templates (T012-T019) — useWorkoutTemplates: CRUD + reorderTemplateExercises (2-pass write s +10000 offset kvůli CHECK order_index >= 0) + startFromTemplate (LEFT JOIN exercises pro missingExerciseCount, batch INSERT workout_sets s předvyplněnými target hodnotami); TemplateCard, TemplateExerciseRow (chevron ▲/▼ fallback místo react-native-draggable-flatlist — RN 0.81/Reanimated 4 kompatibilní risk per research R3); templates/index s 3-action Alert pro rozpracovaný workout (per research R8); templates/[id] editor s auto-save názvu (debounced); workouts/index Šablony entry button; missing-exercise Alert po startFromTemplate — OK`
+
+`2026-05-19 — Sprint I US2 Rest Timer (T020-T026) — notifications.ts (scheduleNotificationAsync TIME_INTERVAL trigger + cancel + permission API), restTimerStorage (AsyncStorage @gymtracker/restTimer s tvarovou validací), useRestTimer state machine (idle/running/paused/done, 500ms tick, mount-time cold-start restore, ensureNotificationPermission, +15 extend re-schedules, pause cancels, resume re-schedules, skip clears, reset re-starts, haptic Notification.Success na done); RestTimer komponenta (dark card s countdown m:ss, progress bar, +15 s/Pauza/Skip akce); _layout setupNotificationHandler v useEffect + GestureHandlerRootView wrapper; workouts/[id] integrace (po addSet auto-start, permission-denied Alert s Linking.openSettings, ref flag once-per-session). Pragmatické rozhodnutí: foreground sound řeší OS notification handler shouldPlaySound:true místo expo-av asset (žádný asset file potřeba) — OK`
+
+`2026-05-19 — Sprint I US3 Historie tréninků (T027-T030) — useWorkoutHistory (paginated 30/page přes Supabase .range, JOIN workout_sets, JS-side aggregace total_volume_kg/set_count/exercise_count, groupByDay s localDateKey podle lokální TZ, loadMore signal); HistoryDayGroup karta s formatWeight v preferred_unit; history/index FlatList (initialNumToRender=15, windowSize=5, removeClippedSubviews, onEndReached); history/[id] detail (summary stats + per-cvik group s max weight + total volume); workouts/index Historie entry button — OK`
+
+`2026-05-19 — Sprint I US4 Equipment filtr (T031-T033) — useExerciseFilters (session-only bodyPart/search/equipmentChips multi-select, applyFilters pure fn s mapEquipmentToChip, AND mezi všemi filtry); EquipmentChips horizontal scroll row 8 chipů s CS labely; integrace do obou pickerů (workouts/[id] + templates/[id]), resetFilters při zavření modalu — OK`
+
+`2026-05-19 — Sprint I Polish (T034 tsc pass, T036 DEV_DIARY, T037 CURRENT_HANDOFF, T039 PROJECT_PLAN updated). ZBÝVÁ uživatel: T035 manual QA per quickstart.md na fyz. iOS+Android, T038 SC měření (rest timer notif latency, FPS historie, kg/lb propagace), T040 RLS verify ze second test accountu — OK (z mé strany)`

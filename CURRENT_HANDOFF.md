@@ -100,20 +100,36 @@ EXPO_PUBLIC_USDA_API_KEY=FhMTR3rnYBaEAIe8KbWueatKHZjoBX05mGohVqcW
 
 ## Co je NEXT
 
-**Sprint H — Exercise Database ✅ HOTOVO** (873 cviků importováno z free-exercise-db).
+**Sprint I — Workout UX Polish ✅ KÓD HOTOV** (40 tasků implementováno na branch `001-workout-ux-polish`, Supabase migrace aplikovaná).
 
-**Další: Sprint I — Workout UX Polish** (viz PROJECT_PLAN.md, sekce "Doporučené pořadí dalších sprintů").
+### Co bylo přidáno do app
+- **Workout Templates** (Strong-style): uložené rutiny s target sets/reps/weight, 1-tap start, missing-exercise toast, dialog pro rozpracovaný workout, chevron ▲/▼ reorder
+- **Rest Timer**: countdown po addSet (default z `profiles.default_rest_seconds`), local push notif přes expo-notifications, AsyncStorage cold-start restore, +15 s / Pauza / Skip akce, permission-denied Alert s openSettings
+- **Historie tréninků**: paginated list 30/page, day grouping (lokální TZ), per-cvik detail s max weight + total volume
+- **Equipment filtr**: 8 chipů v exercise pickeru, multi-select, AND s body_part filter, ve workouts/[id] i templates/[id]
+- **`preferred_unit` kg/lb**: globální preference v profilu, display-layer konverze (DB drží canonical kg), `WeightInput` reusable komponenta
+- **`default_rest_seconds`**: configurable v profilu (5–600 s)
 
-Stručně: historie tréninků (B6) + workout templates + rest timer + opakování posledního tréninku + equipment filtr. Cíl: app použitelná denně bez třenic.
+### Nové DB objekty (aplikováno migrací 20260520)
+- `workout_templates` (id, user_id, name, created_at, updated_at + RLS + trigger touch)
+- `template_exercises` (id, template_id, exercise_id, order_index, target_sets, target_reps, target_weight_kg + UNIQUE(template_id, order_index) + RLS via JOIN)
+- `profiles.default_rest_seconds INT DEFAULT 90 CHECK 5..600`
+- `profiles.preferred_unit TEXT DEFAULT 'kg' CHECK IN ('kg','lb')`
+- `workouts.template_id UUID NULL FK → workout_templates ON DELETE SET NULL`
 
-**Start v nové session:**
-```
-/speckit.specify "Workout UX polish — Sprint I: historie tréninků po dnech, workout templates (uložené rutiny), rest timer mezi sériemi, opakování posledního tréninku, equipment filtr v exercise picker. Cíl: app použitelná denně bez třenic."
-```
+### Co zbývá ze Sprintu I — manuální QA na uživateli
+- **T035** — celý [specs/001-workout-ux-polish/quickstart.md](specs/001-workout-ux-polish/quickstart.md) na fyz. iOS + Android (T1.1–T4.6 + TG.1–TG.3 + Regression)
+- **T038** — SC měření (SC-001 čas z šablony do 1. série, SC-002 rest notif latency, SC-003 historie FPS, SC-008 kg↔lb propagace < 500 ms)
+- **T040** — RLS verify ze second test accountu (`SELECT * FROM workout_templates` vrací 0 cizích řádků)
+- (Volitelné) merge `001-workout-ux-polish` do `main` po QA
 
-Pak: `/speckit.clarify` → `/speckit.plan` → `/speckit.tasks` → `/speckit.implement`.
+### Známé limity / pragmatika
+- DnD reorder cviků v šabloně **nepoužívá** `react-native-draggable-flatlist` — chevron ▲/▼ tlačítka (research.md R3 akceptovatelný fallback; RN 0.81/Reanimated 4 kompatibilní risk)
+- Foreground done sound **není** přes expo-av asset — řeší `setupNotificationHandler` s `shouldPlaySound: true` (OS hraje notification sound i v popředí); haptika navíc
+- `expo-notifications` v Expo Go má od SDK 53+ omezení — pro plný test rest-timer notifikací v pozadí potřebuje dev build (`eas build --profile development`)
 
-Strategická roadmapa (Sprint I → J → K → L) je v PROJECT_PLAN.md.
+### Další Sprint po dokončení QA
+Sprint J — Statistics & Insights (PR per exercise, volume tracking, frequency heatmap, nutrition trends, weight trend line). Viz PROJECT_PLAN.md.
 
 ---
 
@@ -156,8 +172,8 @@ Pak spusť `npm install` v `gymtracker/`.
 ## Git
 
 - Repo: https://github.com/Libords/gym-tracker
-- Branch: main
-- Poslední commit: `feat: onboarding wizard, BMR/TDEE, bottom tabs, partner cycle tracking`
+- Aktivní branch: `001-workout-ux-polish` (Sprint I, 6+ commitů, nemerged)
+- Hlavní branch: `main`
 
 ---
 

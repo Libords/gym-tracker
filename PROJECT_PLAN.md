@@ -111,22 +111,19 @@ Pořadí je voleno podle **value/effort ratio** — co dává největší užite
 
 ---
 
-## Sprint I — Workout UX Polish 🔜 NEXT
+## Sprint I — Workout UX Polish ✅ (kód hotov, čeká na device QA)
 
 Cíl: doplnit "obvyklé" funkce každé fitness app (Strong, Hevy, FitBod), aby byla použitelná denně.
 
-- [ ] **I1** — Historie tréninků (B6): seznam dokončených tréninků seskupený po dnech/týdnech, detail s cviky, doba trvání, total volume
-- [ ] **I2** — Workout templates: uživatel uloží rutinu ("Push day", "Pull day", "Legs"), 1-click vytvoří trénink z šablony. DB: nová tabulka `workout_templates` + `template_exercises`
-- [ ] **I3** — Rest timer: po `addSet` auto-start countdown (default 90s, configurable), push notif když uplyne, zvuk/vibrace
-- [ ] **I4** — "Opakovat poslední trénink": tlačítko na seznamu workouts → nový workout pre-filled se stejnými cviky (bez sérií)
-- [ ] **I5** — Equipment filtr v exercise picker: chip row pod body_part (Činka/Osa/Kabel/Stroj/Vlastní váha/Kettlebell/Bands)
+- [x] **I1** — Historie tréninků (B6): paginated list (30/page) seskupený po dnech, detail per cvik se sériemi + total volume
+- [x] **I2** — Workout templates: Strong-style šablony s target sets/reps/weight, 1-click start, missing-exercise toast, dialog pro rozpracovaný workout
+- [x] **I3** — Rest timer: setInterval countdown + scheduled expo-notifications, AsyncStorage cold-start restore, +15/Pauza/Skip, permission-denied dialog
+- [x] **I4** — "Repeat last" — sloučeno do I2 (templates-lite per spec clarification)
+- [x] **I5** — Equipment filtr v exercise pickeru: 8 chipů (Činka/Osa/Kabel/Stroj/Vlastní váha/Kettlebell/Bands/Žádné) multi-select, AND s body_part
+- [x] **I-bonus** — `preferred_unit` kg/lb na profilu, display layer conversion, `default_rest_seconds` configurable
 
-**Klíčové soubory:** `app/(app)/workouts/` (history.tsx nový + index.tsx update), `app/(app)/workouts/templates/` (nová sekce), `src/hooks/useWorkouts.ts` (nové hooks), `src/hooks/useRestTimer.ts` (nový), Supabase migrace pro templates.
-
-**Spec-kit start prompt:**
-```
-/speckit.specify "Workout UX polish — Sprint I: historie tréninků po dnech, workout templates (uložené rutiny), rest timer mezi sériemi, opakování posledního tréninku, equipment filtr v exercise picker. Cíl: app použitelná denně bez třenic."
-```
+**Branch:** `001-workout-ux-polish` (40 tasků commitnutých po fázích)
+**Čeká na:** manual QA per [specs/001-workout-ux-polish/quickstart.md](specs/001-workout-ux-polish/quickstart.md) na fyz. iOS + Android, SC měření (T035 + T038)
 
 ---
 

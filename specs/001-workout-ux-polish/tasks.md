@@ -132,12 +132,12 @@ description: "Tasks: Workout UX Polish (Sprint I)"
 
 **Účel**: Validace, regression, dokumentace.
 
-- [ ] T034 Spustit `npx tsc --noEmit` v `gymtracker/`, opravit všechny TS chyby. Žádný `any`, žádný `@ts-ignore`.
+- [X] T034 Spustit `npx tsc --noEmit` v `gymtracker/`, opravit všechny TS chyby. Žádný `any`, žádný `@ts-ignore`.
 - [ ] T035 Projít celý [quickstart.md](./quickstart.md) na fyzickém iOS a fyzickém Android zařízení (alespoň jedno každé). Zaznamenat výsledky T1.1–T4.6 + TG.1–TG.3 + Regression sekce.
-- [ ] T036 [P] Aktualizovat `DEV_DIARY.md` v root repa s log entries za každý milestone (Setup, Foundational, US1, US2, US3, US4, Polish).
-- [ ] T037 [P] Aktualizovat `CURRENT_HANDOFF.md` se stavem po sprintu (co je hotové, co zbývá, kde jsou potenciální issues).
+- [X] T036 [P] Aktualizovat `DEV_DIARY.md` v root repa s log entries za každý milestone (Setup, Foundational, US1, US2, US3, US4, Polish).
+- [X] T037 [P] Aktualizovat `CURRENT_HANDOFF.md` se stavem po sprintu (co je hotové, co zbývá, kde jsou potenciální issues).
 - [ ] T038 Ověřit SC-001 až SC-008 měřením na zařízení (časy z šablony do první série; FPS scrolling historie; přepnutí kg↔lb). Zapsat výsledky do `DEV_DIARY.md`.
-- [ ] T039 [P] Zaktualizovat `PROJECT_PLAN.md` — odškrtnout Sprint I, nastavit Sprint J jako next.
+- [X] T039 [P] Zaktualizovat `PROJECT_PLAN.md` — odškrtnout Sprint I, nastavit Sprint J jako next.
 - [ ] T040 Verify RLS: ze second-test-account ověřit `SELECT * FROM workout_templates` vrací 0 řádků cizího uživatele (per FR-002, FR-051).
 
 ---
