@@ -196,6 +196,28 @@ Manuální test plán pokrývající 4 User Stories ze spec.md. Spouštěn na fy
 
 ---
 
+## Offline read (FR-052)
+
+### TO.1 Šablony bez sítě
+- Otevři app online, načti seznam šablon → vrať se na home.
+- Aktivuj airplane mode.
+- Znovu otevři "Šablony".
+- ✅ Seznam je viditelný (z paměti / Supabase JS klient cache aktuální session).
+- ✅ Detail šablony lze otevřít, target hodnoty se zobrazují.
+- ⚠️ Vytvoření / editace šablony za offline může selhat — to je akceptovatelné (FR-052 garantuje jen read, ne write).
+
+### TO.2 Historie bez sítě
+- Otevři Historii online, projdi pár karet.
+- Aktivuj airplane mode, vrať se zpět na historii.
+- ✅ Předchozí načtené stránky historie zůstanou zobrazené, scroll funguje.
+- ⚠️ `loadMore` může selhat → graceful: žádný crash, stačí toast / silent fail.
+
+### TO.3 Rest timer bez sítě
+- Spusť aktivní workout, ulož sérii, počkej na rest timer.
+- ✅ Timer běží lokálně, push notifikace doručí OS bez sítě (notifikace je lokální, ne server-push).
+
+---
+
 ## Regression check (SC-007)
 
 - ✅ Ad-hoc workout (bez šablony) lze stále založit (Workouts → "Nový trénink").
