@@ -171,3 +171,100 @@ Tento dokument je rekonstruován ze dvou Claude Code sessions z 2026-05-17:
 - `6f4bc928-d53a-4caa-a4e2-db0b23fcded6` (20:52–21:21, primárně spec-kit setup pro Sprint A)
 
 Pozn.: pokud existují další vize z chatu na druhém PC (2026-05-18), které nejsou pushnuté do gitu, **v tomto dokumentu chybí**. Doplnit po sync z druhého PC.
+
+---
+
+## 15) Brainstorming z 2026-05-18 (druhý PC, session `2cae6f6c-1590-40ce-8839-0ada10a9370d`)
+
+Tyto myšlenky vznikly při práci na Sprintech C–G (mikronutrienty, cyklus, onboarding, BMR/TDEE). Některé jsou už **implementované** (✅), jiné jsou stále **otevřené vize** (🔜) pro budoucí sprinty.
+
+### 15.1 Onboarding + biometrika — ✅ HOTOVO
+
+- Při registraci nasbírat: pohlaví, rok narození, výška, váha, cílová váha, aktivita v práci, frekvence/délka/typ tréninku.
+- App z toho spočítá **BMR** (Mifflin-St Jeor) a **TDEE** (NEAT + tréninkové kalorie) a navrhne kalorický + makro cíl.
+- Cíle nejsou hardcoded — všude v UI se taháme přes `profile.calorie_goal` / `protein_goal_g` / `carbs_goal_g` / `fat_goal_g`.
+- 5-krokový wizard s gating přes `onboarding_done` flag.
+
+### 15.2 Cyklus partnerky pro muže — ✅ HOTOVO (datově)
+
+**Vize:** Muž ve vztahu může v profilu zapnout `has_partner_cycle` a začne sledovat cyklus partnerky. Cíl: pochopit, v jaké fázi je → mood, energie, co plánovat společně, čeho se zdržet, jak ji podpořit.
+
+- DB: `cycle_logs.is_partner: boolean` — stejná tabulka, oddělené záznamy.
+- UI: pro ženu = záložka "🌙 Cyklus" (osobní), pro muže = "💑 Partnerka" (jen pokud `has_partner_cycle=true`).
+- Data: `PARTNER_PERSPECTIVE` pro každou ze 4 fází obsahuje `moodNote`, `supportTips[]`, `togetherActivities[]`, `avoid`.
+
+**Pozn.:** zatím muž zapisuje cyklus partnerky **sám ručně**. Plné propojení (žena má taky účet a sdílí data) je téma pro 15.5.
+
+### 15.3 Mikronutrienty z USDA — ✅ HOTOVO
+
+- 18 mikronutrientů (vitamíny A/C/D/E/K, B1-B12, minerály: vápník, železo, hořčík, zinek, draslík, sodík, fosfor).
+- Open Food Facts = primární zdroj (rychlé vyhledání, barcode), USDA FDC = enrichment mikronutrienty.
+- `MicronutrientsCard`: % DDD (EU reference values), barevné kódování ≥100%/≥50%/≥20%/0%.
+- Tab "Mikronutrienty" v Výživa screenu.
+
+### 15.4 Fotky progresu — záměrně VYNECHÁNO
+
+- Původně v plánu (D5), ale **odstraněno**.
+- Důvod: uživatelé chtějí mít fotky ve své vlastní galerii (iCloud/Google Photos), ne v aplikaci.
+- App nesleduje fotky, sleduje jen váhu + míry.
+
+### 15.5 🔜 Sdílení dat mezi propojenými účty (couple linking)
+
+**Stav:** vize, neimplementováno.
+
+**Idea:** Žena má svůj účet, sleduje si osobní cyklus. Muž má svůj účet, požádá ji o propojení (něco jako QR / invite kód). Po schválení vidí muž v záložce "💑 Partnerka" živá data z jejího účtu — nemusí je sám ručně přepisovat.
+
+**Otevřené otázky k řešení:**
+- Privacy: žena musí přesně vidět, co muž vidí (jen fáze? + symptomy? + nálada?). Granularita.
+- Co se sdílí: cyklus ano, váha/jídelníček/tréninky pravděpodobně **ne** (separation of concerns).
+- Implementace: nová tabulka `partner_links` (user_a, user_b, status, permissions JSON), supabase RLS na cycle_logs musí podporovat čtení i propojenému uživateli.
+- Revokace: jednostranně, okamžitě.
+
+**Návaznost na trainer-client (#5):** Stejný princip propojení účtů, ale jiná role.
+
+### 15.6 🔜 Push notifikace
+
+**Stav:** vize, neimplementováno (F3 v PROJECT_PLAN).
+
+**Idea — kontextové notifikace:**
+- **Trénink:** pokud `training_days_per_week=4` a uživatel měl trénink před 2 dny → "Dnes je čas na trénink 💪" (chytré, ne dogmatické).
+- **Jídelníček:** ráno "Nezapomeň zalogovat snídani 🥐", pokud do 11h není snídaně.
+- **Váha:** týdně neděle ráno "Změř se a zaznamenej váhu ⚖️".
+- **Cyklus (žena):** den před očekávanou menstruací "Připravuj se 🌸 — zítra začíná období". 1–2 dny do ovulace "Top forma na trénink 🔥".
+- **Cyklus (muž, partner mode):** "Partnerka má dnes začátek luteální fáze — bude pravděpodobně unavenější, naplánuj klidný večer 🌙".
+
+**Tech:** Expo Notifications + scheduled local notifications, žádný server push (pro MVP).
+
+### 15.7 🔜 AI doporučení tréninků a stravy
+
+**Stav:** vize, neimplementováno (backlog).
+
+**Idea:** Claude API analyzuje uživatelská data (poslední 4 týdny tréninků, váhy, jídelníčku, cyklu) a navrhne:
+- Adjustment makro cílů (pokud váha neklesá/neroste podle target → upravit kcal o ±100).
+- Tréninkový plán na další týden (podle frekvence + cyklu u žen).
+- Recepty / jídla podle chybějících mikronutrientů ("Tento týden máš málo železa — doporučuju toto").
+
+**Pozn.:** Claude API stojí peníze, takže buď premium feature, nebo rate-limited (1× týdně).
+
+### 15.8 🔜 Comprehensive exercise DB — ✅ HOTOVO ve Sprintu H
+
+- 873 cviků z `free-exercise-db` (yuhonas/free-exercise-db, public domain).
+- Filtry podle body_part, equipment, target muscle.
+- Detail cviku: instrukce, sekundární svaly, GIF URL.
+- Vlastní cviky (`is_custom=true`) zachovány.
+
+### 15.9 🔜 Sdílení dat skrze sociální síť (future)
+
+**Stav:** dlouhodobá vize, ne pro phase 1+2.
+
+- Friends system uvnitř appky — kamarádi vidí navzájem progress, motivují se.
+- Sdílení tréninků jako "stories" (Strava-style).
+- Soutěže (kdo má víc volume tento týden, nejdelší streak).
+- **Kolize s #7 Komunita (zamítnuto):** tento koncept je jiný — ne "veřejné diskuze", ale uzavřené přátelské skupiny (5-10 lidí). Méně overhead na moderaci.
+
+---
+
+## Zdroj dat — pokračování
+
+- `2cae6f6c-1590-40ce-8839-0ada10a9370d` (2026-05-18, druhý PC) — Sprint C–G, mikronutrienty, cyklus partnerky, BMR/TDEE, onboarding, spec-kit instalace.
+- Pokračování práce v session z 2026-05-19 (současný chat) — Sprint H Exercise DB + VISIONS update.
