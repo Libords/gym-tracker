@@ -25,9 +25,9 @@ description: "Tasks: Workout UX Polish (Sprint I)"
 
 **Účel**: Instalace nových závislostí a příprava folder struktury podle plan.md.
 
-- [ ] T001 Schválit a nainstalovat nové npm závislosti v `gymtracker/`: `expo-notifications`, `expo-haptics`, `expo-av` (nebo `expo-audio` per SDK 54 doc), `react-native-draggable-flatlist`. Spustit `npx expo install <pkg>` (NE `npm install`) aby Expo zvolil verze kompatibilní s SDK 54. Aktualizuje `gymtracker/package.json` + lockfile.
-- [ ] T002 [P] Vytvořit doménový folder `gymtracker/src/components/workouts/` (zatím prázdný; bude obsahovat RestTimer.tsx, TemplateCard.tsx, TemplateExerciseRow.tsx, EquipmentChips.tsx, HistoryDayGroup.tsx, WeightInput.tsx).
-- [ ] T003 [P] Vytvořit folder `supabase/migrations/` v repo rootu, pokud zatím neexistuje. Připravit prázdný `.gitkeep` pokud žádné existující migrace nejsou.
+- [X] T001 Schválit a nainstalovat nové npm závislosti v `gymtracker/`: `expo-notifications`, `expo-haptics`, `expo-av` (nebo `expo-audio` per SDK 54 doc), `react-native-draggable-flatlist`. Spustit `npx expo install <pkg>` (NE `npm install`) aby Expo zvolil verze kompatibilní s SDK 54. Aktualizuje `gymtracker/package.json` + lockfile.
+- [X] T002 [P] Vytvořit doménový folder `gymtracker/src/components/workouts/` (zatím prázdný; bude obsahovat RestTimer.tsx, TemplateCard.tsx, TemplateExerciseRow.tsx, EquipmentChips.tsx, HistoryDayGroup.tsx, WeightInput.tsx).
+- [X] T003 [P] Vytvořit folder `supabase/migrations/` v repo rootu, pokud zatím neexistuje. Připravit prázdný `.gitkeep` pokud žádné existující migrace nejsou.
 
 **Checkpoint**: Závislosti nainstalovány, struktura připravena. Bez T001 nelze začít s US2 (notifikace) ani US1 (DnD).
 
