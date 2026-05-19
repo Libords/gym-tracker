@@ -75,9 +75,14 @@ export default function WorkoutsScreen() {
     <View style={styles.container}>
       <View style={styles.titleRow}>
         <Text style={styles.title}>Tréninky</Text>
-        <TouchableOpacity style={styles.tplBtn} onPress={() => router.push('/(app)/workouts/templates')}>
-          <Text style={styles.tplBtnText}>Šablony</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <TouchableOpacity style={styles.tplBtn} onPress={() => router.push('/(app)/workouts/history')}>
+            <Text style={styles.tplBtnText}>Historie</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.tplBtn} onPress={() => router.push('/(app)/workouts/templates')}>
+            <Text style={styles.tplBtnText}>Šablony</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {sections.length === 0 ? (
