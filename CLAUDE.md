@@ -31,6 +31,7 @@
 - Zanechat broken build v gitu
 
 <!-- SPECKIT START -->
-For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
+Active feature plan: [specs/001-workout-ux-polish/plan.md](specs/001-workout-ux-polish/plan.md)
+Spec: [specs/001-workout-ux-polish/spec.md](specs/001-workout-ux-polish/spec.md)
+Research / data model / contracts / quickstart live in `specs/001-workout-ux-polish/`.
 <!-- SPECKIT END -->
