@@ -7,7 +7,9 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useWorkoutSets, useExercises, useWorkouts } from '../../../src/hooks/useWorkouts'
 import { useRestTimer } from '../../../src/hooks/useRestTimer'
 import { useProfile } from '../../../src/hooks/useProfile'
+import { useExerciseFilters } from '../../../src/hooks/useExerciseFilters'
 import { RestTimer } from '../../../src/components/workouts/RestTimer'
+import { EquipmentChips } from '../../../src/components/workouts/EquipmentChips'
 import type { Exercise } from '../../../src/types/workout'
 
 const BODY_PARTS = ['Vše', 'chest', 'back', 'upper legs', 'lower legs', 'upper arms', 'lower arms', 'shoulders', 'waist', 'cardio']
@@ -34,16 +36,15 @@ export default function WorkoutDetailScreen() {
   const [reps, setReps] = useState('')
   const [weight, setWeight] = useState('')
   const [saving, setSaving] = useState(false)
-  const [search, setSearch] = useState('')
-  const [bodyPart, setBodyPart] = useState('Vše')
+  const {
+    filters, setBodyPart, setSearch, toggleEquipmentChip, applyFilters,
+  } = useExerciseFilters()
+  const search = filters.search
+  const bodyPart = filters.bodyPart
 
-  const filteredExercises = useMemo(() =>
-    exercises.filter(e => {
-      const matchSearch = e.name.toLowerCase().includes(search.toLowerCase())
-      const matchBodyPart = bodyPart === 'Vše' || e.body_part === bodyPart
-      return matchSearch && matchBodyPart
-    }),
-    [exercises, search, bodyPart]
+  const filteredExercises = useMemo(
+    () => applyFilters(exercises),
+    [exercises, applyFilters],
   )
 
   const handleAddSet = async () => {
@@ -183,6 +184,11 @@ export default function WorkoutDetailScreen() {
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
+
+                <EquipmentChips
+                  selected={filters.equipmentChips}
+                  onToggle={toggleEquipmentChip}
+                />
 
                 <Text style={styles.resultCount}>{filteredExercises.length} cviků</Text>
 

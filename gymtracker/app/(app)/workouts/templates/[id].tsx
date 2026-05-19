@@ -6,7 +6,9 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useWorkoutTemplates } from '../../../../src/hooks/useWorkoutTemplates'
 import { useExercises } from '../../../../src/hooks/useWorkouts'
+import { useExerciseFilters } from '../../../../src/hooks/useExerciseFilters'
 import { TemplateExerciseRow } from '../../../../src/components/workouts/TemplateExerciseRow'
+import { EquipmentChips } from '../../../../src/components/workouts/EquipmentChips'
 import type { Exercise, TemplateExercise } from '../../../../src/types/workout'
 
 const BODY_PARTS = ['Vše', 'chest', 'back', 'upper legs', 'lower legs', 'upper arms', 'lower arms', 'shoulders', 'waist', 'cardio']
@@ -30,8 +32,11 @@ export default function TemplateEditorScreen() {
   const template = templates.find(t => t.id === id)
   const [name, setName] = useState('')
   const [pickerOpen, setPickerOpen] = useState(false)
-  const [search, setSearch] = useState('')
-  const [bodyPart, setBodyPart] = useState('Vše')
+  const {
+    filters, setBodyPart, setSearch, toggleEquipmentChip, applyFilters, reset: resetFilters,
+  } = useExerciseFilters()
+  const search = filters.search
+  const bodyPart = filters.bodyPart
 
   useEffect(() => {
     if (template) setName(template.name)
@@ -54,19 +59,16 @@ export default function TemplateEditorScreen() {
     [template?.template_exercises],
   )
 
-  const filteredExercises = useMemo(() => {
-    return exercises.filter(e => {
-      const matchSearch = e.name.toLowerCase().includes(search.toLowerCase())
-      const matchBodyPart = bodyPart === 'Vše' || e.body_part === bodyPart
-      return matchSearch && matchBodyPart
-    })
-  }, [exercises, search, bodyPart])
+  const filteredExercises = useMemo(
+    () => applyFilters(exercises),
+    [exercises, applyFilters],
+  )
 
   const handleAddExercise = async (ex: Exercise) => {
     if (!template) return
     await addExerciseToTemplate(template.id, ex.id, { sets: 3, reps: 10, weight_kg: null })
     setPickerOpen(false)
-    setSearch('')
+    resetFilters()
   }
 
   const handleMove = (idx: number, dir: -1 | 1) => {
@@ -167,6 +169,10 @@ export default function TemplateEditorScreen() {
                 </TouchableOpacity>
               ))}
             </ScrollView>
+            <EquipmentChips
+              selected={filters.equipmentChips}
+              onToggle={toggleEquipmentChip}
+            />
             <Text style={styles.resultCount}>{filteredExercises.length} cviků</Text>
             <ScrollView style={{ maxHeight: 320 }}>
               {filteredExercises.map(e => (
@@ -182,7 +188,7 @@ export default function TemplateEditorScreen() {
                 </TouchableOpacity>
               ))}
             </ScrollView>
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => { setPickerOpen(false); setSearch('') }}>
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => { setPickerOpen(false); resetFilters() }}>
               <Text>Zavřít</Text>
             </TouchableOpacity>
           </View>

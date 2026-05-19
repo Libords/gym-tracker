@@ -120,9 +120,9 @@ description: "Tasks: Workout UX Polish (Sprint I)"
 
 ### Implementation for User Story 4
 
-- [ ] T031 [P] [US4] Vytvořit `gymtracker/src/hooks/useExerciseFilters.ts` implementující `UseExerciseFilters` z [contracts/equipment-facets.ts](./contracts/equipment-facets.ts): state pro `bodyParts` a `equipmentChips`, `toggleEquipmentChip`, `clearEquipmentChips`, `applyFilters(exercises)`. Filtry session-only (per FR-043) — žádná persistence.
-- [ ] T032 [P] [US4] Vytvořit `gymtracker/src/components/workouts/EquipmentChips.tsx` — horizontal scroll row 8 chipů per `EQUIPMENT_CHIP_LABEL_CS`, multi-select state, callback `onToggle(chip)`.
-- [ ] T033 [US4] Integrovat equipment filter do exercise pickeru v `gymtracker/app/(app)/workouts/[id].tsx`. Pod existující body_part filter řádek přidat `<EquipmentChips/>`. Stávající `exercises.filter(e => ...)` rozšířit o equipment filtr přes `mapEquipmentToChip(e.equipment)`. Empty state pro 0 cviků v kombinaci filtrů. Aplikovat **stejnou integraci** v editoru šablon z T016 (`workouts/templates/[id].tsx`) — picker při přidávání cviku do šablony.
+- [X] T031 [P] [US4] Vytvořit `gymtracker/src/hooks/useExerciseFilters.ts` implementující `UseExerciseFilters` z [contracts/equipment-facets.ts](./contracts/equipment-facets.ts): state pro `bodyParts` a `equipmentChips`, `toggleEquipmentChip`, `clearEquipmentChips`, `applyFilters(exercises)`. Filtry session-only (per FR-043) — žádná persistence.
+- [X] T032 [P] [US4] Vytvořit `gymtracker/src/components/workouts/EquipmentChips.tsx` — horizontal scroll row 8 chipů per `EQUIPMENT_CHIP_LABEL_CS`, multi-select state, callback `onToggle(chip)`.
+- [X] T033 [US4] Integrovat equipment filter do exercise pickeru v `gymtracker/app/(app)/workouts/[id].tsx`. Pod existující body_part filter řádek přidat `<EquipmentChips/>`. Stávající `exercises.filter(e => ...)` rozšířit o equipment filtr přes `mapEquipmentToChip(e.equipment)`. Empty state pro 0 cviků v kombinaci filtrů. Aplikovat **stejnou integraci** v editoru šablon z T016 (`workouts/templates/[id].tsx`) — picker při přidávání cviku do šablony.
 
 **Checkpoint**: US4 plně funkční na obou místech, kde se vybírá cvik.
 
