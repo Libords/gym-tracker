@@ -166,12 +166,12 @@ export default function ProfileScreen() {
 
       {/* Training */}
       <SectionHeader title="Trénink" />
-      <Label text="Počet tréninků týdně" />
+      <Label text="Kolik dní v týdnu trénuješ" />
       <View style={styles.stepperRow}>
         <TouchableOpacity style={styles.stepperBtn} onPress={() => setTrainingDays(d => Math.max(0, d - 1))}>
           <Text style={styles.stepperBtnText}>−</Text>
         </TouchableOpacity>
-        <Text style={styles.stepperValue}>{trainingDays}×</Text>
+        <Text style={styles.stepperValue}>{trainingDays}</Text>
         <TouchableOpacity style={styles.stepperBtn} onPress={() => setTrainingDays(d => Math.min(7, d + 1))}>
           <Text style={styles.stepperBtnText}>+</Text>
         </TouchableOpacity>

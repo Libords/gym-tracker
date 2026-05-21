@@ -268,3 +268,87 @@ Tyto myšlenky vznikly při práci na Sprintech C–G (mikronutrienty, cyklus, o
 
 - `2cae6f6c-1590-40ce-8839-0ada10a9370d` (2026-05-18, druhý PC) — Sprint C–G, mikronutrienty, cyklus partnerky, BMR/TDEE, onboarding, spec-kit instalace.
 - Pokračování práce v session z 2026-05-19 (současný chat) — Sprint H Exercise DB + VISIONS update.
+
+---
+
+## 16) Vize z 2026-05-21 / 2026-05-22 (testing Sprintu I)
+
+Tyto úvahy vznikly při prvním procházení appky v Expo Go po dokončení Sprintu I (Workout UX Polish).
+
+### 16.1 🔜 UX restrukturalizace — top-level navigace
+
+**Stav:** vize, neimplementováno. Důležitý redesign.
+
+**Problém:** Aktuální bottom-tab navigace má moc záložek, je v tom zmatek a uživatel se v appce nevyzná.
+
+**Idea:**
+- Místo plochého bottom-tabu rozdělit appku na **kontexty/režimy**: tréninkový režim, výživový režim, případně další (progress, edukace).
+- Mezi režimy se přepínat buď:
+  - **(A)** přepínačem nahoře v hlavičce, nebo
+  - **(B)** ikonkou profilu vlevo nahoře → rozklikávací menu (mode selector + nastavení + osobní údaje).
+- Konkrétní layout ještě nerozhodnut. Libor zkusí najít existující appku (nemusí být fitness), která má UX layout, jaký by se mu líbil, a donese referenci.
+- Bottom tab může zůstat pro nejčastější akce **v rámci aktivního režimu**, ale ne pro přepínání režimů.
+
+**How to apply:** Až bude Libor mít referenci, navrhnout konkrétní layout. Tohle bude samostatný sprint po dokončení testování Sprintu I a opravení bug-fixů (16.5).
+
+### 16.2 🔜 Onboarding 2.0 — science disclaimer + přesnější makra
+
+**Stav:** vize, neimplementováno. Podrobnosti viz [`memory/feedback_nutrition_messaging.md`](.../memory/feedback_nutrition_messaging.md).
+
+**Klíčové body:**
+- **Surplus pro nabírání** je nutné odlehčit — novější studie a praxe ukazují, že lze nabírat i v maintenance / mírném deficitu (zvlášť pro natural, začátečníky, návrat po pauze).
+- **U hubnutí** doplnit varování proti podkročení BMR.
+- **TDEE vysvětlit jako průměr**, ne instrukci na den. Vícedenní příjem/výdej se hodnotí, ne jednodenní.
+- **Disclaimer** přidat k metabolismu i makrům: "vychází z aktuálních vědeckých poznatků, věda se vyvíjí, doporučení nejsou závazné instrukce, uživatel je nemusí dodržovat".
+- **Vysvětlit zdroje** čísel: proč 1.8 g/kg protein (ISSN range 1.6–2.2), proč 25 % tuk (Helms et al. — minimum pro hormonální zdraví), proč zbytek carbs.
+- **Protein adjustment per goal**: cut 2.0–2.4 g/kg > maintenance 1.8 > bulk 1.6–1.8. Aktuálně fixně 1.8 g/kg v `src/lib/bmr.ts:95`.
+
+### 16.3 🔜 Dietní preference (lowcarb / keto / highcarb / standard)
+
+**Stav:** vize, neimplementováno.
+
+**Idea:** Uživatel si v onboardingu vybere preferovaný styl stravování. Makra se podle toho upraví:
+- **Standard** (aktuální) — 25 % tuk / 1.8 g/kg protein / zbytek carbs
+- **Lowcarb** — ~40 % tuk / 20 % carbs / vyšší protein
+- **Keto** — ~70 % tuk / <10 % carbs / mírný protein
+- **Highcarb** — <20 % tuk / vyšší carbs / 1.8 g/kg protein
+
+**Pozn.:** Hodnoty jsou výchozí — uživatel je může v profilu doupravit. App neprosazuje žádný styl, jen nabízí presets.
+
+### 16.4 🔜 Onboarding — per-type training frequency
+
+**Stav:** vize, neimplementováno.
+
+**Problém:** Aktuální stepper "Kolik dní v týdnu trénuješ?" (max 7) je v pořádku pro lidi s jedním typem tréninku. Hybridní cvičenci (3× silově + 2× kardio) nemají možnost zadat různé frekvence per typ.
+
+**Idea:** Místo jednoho čísla rozdělit na sekce per training type — X dní silově, Y dní kardio, Z dní jiné. TDEE výpočet se zpřesní.
+
+### 16.5 🐛 Bugy nalezené při testování (k opravě v dalším sprintu)
+
+1. **Bílá obrazovka na dashboardu po dokončení onboardingu.** Profile tab funguje, dashboard ne. Pravděpodobně buď JS error v jedné z komponent (`useCycleLogs`, `useNutrition`, `useWeightLogs`), nebo race condition s `useProfile` mezi onboarding completion a dashboard mount.
+2. **Profil v záložce Profil není předvyplněn údaji z onboardingu.** `useProfile().updateProfile` v onboardingu by měl perzistovat, ale po navigaci na profile screen nejsou hodnoty načtené. Možná druhý `useProfile` instance neaktualizuje state z DB.
+
+**Priorita:** Vysoká — blokuje další testování. Řešit hned po Sprintu I (před UX redesignem 16.1).
+
+### 16.6 🔜 Partnerčin cyklus i pro ženské uživatelky (lesbické páry)
+
+**Stav:** vize, malá změna.
+
+**Problém:** Aktuálně toggle `has_partner_cycle` v profilu se zobrazuje jen mužům. Home screen: `cycleMode = profile?.gender === 'male' ? 'partner' : 'personal'` — žena nemá možnost sledovat partnerčin cyklus.
+
+**Idea:** Umožnit i ženě zapnout sledování partnerčina cyklu. Pak by měla 2 záložky: vlastní cyklus + partnerčin. Nebo přepínač mezi nimi.
+
+**Pozn.:** Lze udělat jako součást UX redesignu (16.1), kdy se stejně bude přepracovávat home/profil.
+
+### 16.7 ✅ Drobné opravy hotové v této session
+
+- `register.tsx`: opraveno aby po `signUp` nevyskakoval alert "zkontroluj email" když je session už vytvořená (= email confirmation vypnuté v Supabase).
+- `onboarding.tsx` + `profile.tsx`: text "Kolikrát týdně trénuješ?" → "Kolik dní v týdnu trénuješ?" (správnější formulace, max 7 dává smysl).
+
+### 16.8 📋 Provozní rozhodnutí 2026-05-21
+
+- **Backupy v Supabase**: free tier nemá auto backupy. Při launchi zůstaneme na free + manuální `pg_dump` cron → R2/S3 jako levná pojistka. Pro tier ($25/mo, 7denní backup retence) až cash flow z platících uživatelů to pokryje.
+- **Migrace dat účet A → účet B**: jednorázový poplatek (NE součást subscription).
+- **Export dat** (CSV/JSON): jednorázový poplatek; GDPR-friendly, snižuje support load.
+- **Reklamy ve free tier**: ano — banner + občasné video interstitial (skip po pár vteřinách). Premium = bez reklam. Architektura: `entitlements.ads_disabled` flag.
+- **Liborův účet**: vše odemčené zdarma (admin/owner flag v DB).

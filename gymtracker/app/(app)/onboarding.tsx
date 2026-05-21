@@ -302,12 +302,12 @@ function Step4Training(p: {
       <Text style={styles.stepTitle}>Trénink</Text>
       <Text style={styles.stepSubtitle}>Jak vypadají tvoje tréninky? Dopočteme energetický výdej ze sportu.</Text>
 
-      <Text style={styles.inputLabel}>Kolikrát týdně tréninuješ?</Text>
+      <Text style={styles.inputLabel}>Kolik dní v týdnu trénuješ?</Text>
       <View style={styles.stepperRow}>
         <TouchableOpacity style={styles.stepperBtn} onPress={() => p.setTrainingDays(Math.max(0, p.trainingDays - 1))}>
           <Text style={styles.stepperBtnText}>−</Text>
         </TouchableOpacity>
-        <Text style={styles.stepperValue}>{p.trainingDays}×</Text>
+        <Text style={styles.stepperValue}>{p.trainingDays}</Text>
         <TouchableOpacity style={styles.stepperBtn} onPress={() => p.setTrainingDays(Math.min(7, p.trainingDays + 1))}>
           <Text style={styles.stepperBtnText}>+</Text>
         </TouchableOpacity>

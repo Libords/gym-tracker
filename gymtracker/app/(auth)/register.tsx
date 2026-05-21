@@ -26,13 +26,17 @@ export default function RegisterScreen() {
       return
     }
     setLoading(true)
-    const { error } = await supabase.auth.signUp({ email, password })
+    const { data, error } = await supabase.auth.signUp({ email, password })
     setLoading(false)
     if (error) {
       Alert.alert('Chyba registrace', error.message)
-    } else {
-      Alert.alert('Hotovo', 'Zkontroluj email a potvrď registraci.')
+      return
     }
+    if (data.session) {
+      // Email confirmation disabled — user is logged in immediately
+      return
+    }
+    Alert.alert('Hotovo', 'Zkontroluj email a potvrď registraci.')
   }
 
   return (
