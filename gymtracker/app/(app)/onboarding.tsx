@@ -7,10 +7,11 @@ import { useRouter } from 'expo-router'
 import { useProfile } from '../../src/hooks/useProfile'
 import { useWeightLogs } from '../../src/hooks/useProgress'
 import {
-  calcBMR, calcTDEE, calcSuggestedMacros, calcBMI, bmiCategory,
+  calcBMR, calcTDEE, calcSuggestedMacros, calcBMI, bmiCategory, inferGoal,
+  PROTEIN_PER_KG, FAT_PCT,
   JOB_ACTIVITY_LABELS, TRAINING_TYPE_LABELS,
 } from '../../src/lib/bmr'
-import type { JobActivity, TrainingType, Gender } from '../../src/lib/bmr'
+import type { JobActivity, TrainingType, Gender, Goal } from '../../src/lib/bmr'
 
 const STEPS = 5
 const DURATION_OPTIONS = [
@@ -57,10 +58,12 @@ export default function OnboardingScreen() {
       trainingAvgDurationMin: trainingDuration,
       trainingTypes, weight_kg: w,
     })
-    const macros = calcSuggestedMacros(tdee, w)
+    const tw = parseFloat(targetWeight)
+    const goal = inferGoal(w, isNaN(tw) ? null : tw)
+    const macros = calcSuggestedMacros(tdee, w, goal)
     const bmi = calcBMI(w, h)
     const bmiCat = bmiCategory(bmi)
-    return { bmr, tdee, macros, bmi, bmiCat }
+    return { bmr, tdee, macros, bmi, bmiCat, goal }
   }
 
   const [calorieGoalOverride, setCalorieGoalOverride] = useState<string | null>(null)
@@ -84,7 +87,7 @@ export default function OnboardingScreen() {
     const w = parseFloat(weight)
     const calGoal = finalCalorieGoal()
     const c = getCalcs()
-    const macros = c ? calcSuggestedMacros(calGoal, w) : { protein_g: 140, carbs_g: 200, fat_g: 60 }
+    const macros = c ? calcSuggestedMacros(calGoal, w, c.goal) : { protein_g: 140, carbs_g: 200, fat_g: 60 }
 
     await updateProfile({
       full_name: fullName.trim() || null,
@@ -350,8 +353,14 @@ function Step4Training(p: {
 
 // ─── Step 5: Metabolism summary ───────────────────────────────────────────────
 
+const GOAL_LABEL: Record<Goal, string> = {
+  cut: 'Hubnutí',
+  maintenance: 'Udržování',
+  bulk: 'Nabírání',
+}
+
 function Step5Metabolism(p: {
-  calcs: { bmr: number; tdee: number; macros: { protein_g: number; carbs_g: number; fat_g: number }; bmi: number; bmiCat: { label: string; color: string } } | null
+  calcs: { bmr: number; tdee: number; macros: { protein_g: number; carbs_g: number; fat_g: number }; bmi: number; bmiCat: { label: string; color: string }; goal: Goal } | null
   weight: number
   calorieGoalOverride: string | null
   setCalorieGoalOverride: (v: string | null) => void
@@ -368,7 +377,10 @@ function Step5Metabolism(p: {
 
   const displayGoal = calorieGoalOverride ?? String(calcs.tdee)
   const goalNum = parseInt(displayGoal) || calcs.tdee
-  const macros = calcSuggestedMacros(goalNum, p.weight)
+  const macros = calcSuggestedMacros(goalNum, p.weight, calcs.goal)
+  const proteinPerKg = PROTEIN_PER_KG[calcs.goal]
+  const fatPct = Math.round(FAT_PCT[calcs.goal] * 100)
+  const belowBMR = goalNum < calcs.bmr
 
   return (
     <View style={styles.step}>
@@ -384,13 +396,20 @@ function Step5Metabolism(p: {
           <View style={styles.metaDivider} />
           <View style={styles.metaItem}>
             <Text style={[styles.metaNum, { color: '#2563eb' }]}>{calcs.tdee}</Text>
-            <Text style={styles.metaLabel}>TDEE{'\n'}(celkový výdej)</Text>
+            <Text style={styles.metaLabel}>TDEE{'\n'}(průměrný denní výdej)</Text>
           </View>
         </View>
         <Text style={styles.metaNote}>
-          BMR = základní výdej v klidu (Mifflin-St Jeor){'\n'}
-          TDEE = celkový výdej včetně aktivity a tréninků
+          BMR = základní výdej v klidu (Mifflin-St Jeor).{'\n'}
+          TDEE = průměrný celkový výdej včetně aktivity a tréninků. Hodnotí se na vícedenní bázi, ne den po dni — jednotlivé dny můžou být nad i pod.
         </Text>
+      </View>
+
+      <View style={styles.goalChipRow}>
+        <Text style={styles.goalChipLabel}>Cíl podle váhy:</Text>
+        <View style={styles.goalChip}>
+          <Text style={styles.goalChipText}>{GOAL_LABEL[calcs.goal]}</Text>
+        </View>
       </View>
 
       <Text style={styles.inputLabel}>Denní kalorický cíl (kcal)</Text>
@@ -401,15 +420,37 @@ function Step5Metabolism(p: {
         keyboardType="numeric"
       />
       <Text style={styles.calorieHint}>
-        Zhubnout → −200 až −500 kcal pod TDEE{'\n'}
-        Přibrat svaly → +100 až +300 kcal nad TDEE
+        Hubnutí → −200 až −500 kcal pod TDEE. Nedoporučuje se klesat pod BMR ({calcs.bmr} kcal).{'\n'}
+        Nabírání → mírný surplus +100 až +300 kcal pro rychlejší růst. Nabírat jde i v maintenance — pomaleji, ale s menším podílem tuku.
       </Text>
+      {belowBMR && (
+        <View style={styles.warnCard}>
+          <Text style={styles.warnText}>
+            ⚠️ Cíl ({goalNum} kcal) je pod tvým BMR ({calcs.bmr} kcal). Dlouhodobě nedoporučeno — riziko ztráty svalové hmoty, hormonálních problémů a metabolické adaptace.
+          </Text>
+        </View>
+      )}
 
       <Text style={[styles.inputLabel, { marginTop: 16 }]}>Navrhované makro rozdělení</Text>
       <View style={styles.macroCards}>
-        <MacroResult label="Bílkoviny" value={macros.protein_g} color="#3b82f6" hint="~1.8g/kg" />
+        <MacroResult label="Bílkoviny" value={macros.protein_g} color="#3b82f6" hint={`${proteinPerKg} g/kg`} />
         <MacroResult label="Sacharidy" value={macros.carbs_g} color="#f59e0b" hint="zbytek" />
-        <MacroResult label="Tuky" value={macros.fat_g} color="#ef4444" hint="25% kcal" />
+        <MacroResult label="Tuky" value={macros.fat_g} color="#ef4444" hint={`${fatPct} % kcal`} />
+      </View>
+
+      <View style={styles.sourceCard}>
+        <Text style={styles.sourceTitle}>Odkud čísla pocházejí</Text>
+        <Text style={styles.sourceText}>
+          • <Text style={styles.sourceBold}>Bílkoviny {proteinPerKg} g/kg</Text> — v rámci doporučení ISSN (1,6–2,2 g/kg pro aktivně cvičící). Vyšší na cutu pro udržení svaloviny, nižší na bulku, aby zbylo na sacharidy.{'\n'}
+          • <Text style={styles.sourceBold}>Tuky {fatPct} % kcal</Text> — minimum pro hormonální zdraví (Helms et al., bulk/cut review).{'\n'}
+          • <Text style={styles.sourceBold}>Sacharidy zbytek</Text> — primární palivo pro výkon v posilovně.
+        </Text>
+      </View>
+
+      <View style={styles.disclaimerCard}>
+        <Text style={styles.disclaimerText}>
+          Hodnoty vycházejí z aktuálních vědeckých poznatků (Mifflin-St Jeor pro BMR, doporučení ISSN pro bílkoviny). Věda se vyvíjí — za pár let mohou být doporučení jiná. Toto jsou orientační hodnoty, ne závazné instrukce. Vše můžeš v profilu doupravit.
+        </Text>
       </View>
     </View>
   )
@@ -490,6 +531,18 @@ const styles = StyleSheet.create({
   macroCardLabel: { fontSize: 12, color: '#555', marginTop: 2 },
   macroCardHint: { fontSize: 10, color: '#aaa', marginTop: 2 },
 
+  goalChipRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 8 },
+  goalChipLabel: { fontSize: 13, color: '#666', fontWeight: '500' },
+  goalChip: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 14, backgroundColor: '#eff6ff', borderWidth: 1, borderColor: '#2563eb' },
+  goalChipText: { fontSize: 13, color: '#2563eb', fontWeight: '700' },
+  warnCard: { backgroundColor: '#fef3c7', borderColor: '#f59e0b', borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 8 },
+  warnText: { fontSize: 12, color: '#92400e', lineHeight: 18 },
+  sourceCard: { backgroundColor: '#f8fafc', borderRadius: 12, padding: 14, marginTop: 14, borderLeftWidth: 3, borderLeftColor: '#64748b' },
+  sourceTitle: { fontSize: 13, fontWeight: '700', color: '#334155', marginBottom: 6 },
+  sourceText: { fontSize: 12, color: '#475569', lineHeight: 18 },
+  sourceBold: { fontWeight: '700', color: '#1e293b' },
+  disclaimerCard: { backgroundColor: '#f1f5f9', borderRadius: 10, padding: 12, marginTop: 12 },
+  disclaimerText: { fontSize: 11, color: '#64748b', lineHeight: 16, fontStyle: 'italic' },
   navRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8, paddingBottom: 24 },
   backBtn: { padding: 14 },
   backBtnText: { color: '#888', fontSize: 15 },

@@ -6,7 +6,7 @@ import {
 import { useProfile } from '../../src/hooks/useProfile'
 import { useAuth } from '../../src/context/AuthContext'
 import {
-  calcBMR, calcTDEE, calcSuggestedMacros,
+  calcBMR, calcTDEE, calcSuggestedMacros, inferGoal,
   JOB_ACTIVITY_LABELS, TRAINING_TYPE_LABELS,
 } from '../../src/lib/bmr'
 import type { JobActivity, TrainingType, Gender } from '../../src/lib/bmr'
@@ -69,12 +69,15 @@ export default function ProfileScreen() {
     if (!gender || !w || !h || !by || !jobActivity) return
     const bmr = calcBMR(w, h, by, gender)
     const tdee = calcTDEE({ bmr, jobActivity, trainingDaysPerWeek: trainingDays, trainingAvgDurationMin: trainingDuration, trainingTypes, weight_kg: w })
-    const macros = calcSuggestedMacros(tdee, w)
+    const tw = parseFloat(targetWeight)
+    const goal = inferGoal(w, isNaN(tw) ? null : tw)
+    const macros = calcSuggestedMacros(tdee, w, goal)
     setCalorieGoal(String(tdee))
     setProteinGoal(String(macros.protein_g))
     setCarbsGoal(String(macros.carbs_g))
     setFatGoal(String(macros.fat_g))
-    Alert.alert('Přepočítáno', `BMR: ${bmr} kcal\nTDEE: ${tdee} kcal`)
+    const goalLabel = goal === 'cut' ? 'Hubnutí' : goal === 'bulk' ? 'Nabírání' : 'Udržování'
+    Alert.alert('Přepočítáno', `BMR: ${bmr} kcal\nTDEE: ${tdee} kcal\nCíl: ${goalLabel}\n\nTDEE je průměrný denní výdej — hodnoť na vícedenní bázi.`)
   }
 
   const handleSave = async () => {
@@ -223,6 +226,10 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      <Text style={styles.disclaimer}>
+        Hodnoty vycházejí z aktuálních vědeckých poznatků (Mifflin-St Jeor, doporučení ISSN pro bílkoviny 1,6–2,2 g/kg, Helms et al. pro tuky min 25 % kcal). Cíl pro bílkoviny app škáluje podle cíle (cut 2,2 g/kg, maintenance 1,8 g/kg, bulk 1,7 g/kg) odvozeného z cílové váhy. Toto jsou orientační hodnoty — můžeš je libovolně upravit.
+      </Text>
+
       {/* Workout settings (Sprint I) */}
       <SectionHeader title="Nastavení tréninku" />
       <Label text="Jednotka váhy" />
@@ -314,4 +321,5 @@ const styles = StyleSheet.create({
   saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   signOutBtn: { padding: 14, alignItems: 'center', marginBottom: 20 },
   signOutText: { color: '#94a3b8', fontSize: 14 },
+  disclaimer: { fontSize: 11, color: '#64748b', lineHeight: 16, fontStyle: 'italic', backgroundColor: '#f1f5f9', borderRadius: 10, padding: 12, marginBottom: 12 },
 })

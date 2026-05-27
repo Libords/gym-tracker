@@ -84,17 +84,46 @@ export function calcTDEE(params: {
   return Math.round(baseTDEE + calPerDay)
 }
 
-// ─── Macro split ──────────────────────────────────────────────────────────────
+// ─── Goal inference + Macro split ─────────────────────────────────────────────
+
+export type Goal = 'cut' | 'maintenance' | 'bulk'
+
+// Threshold: target within ±2 kg of current weight = maintenance
+const GOAL_THRESHOLD_KG = 2
+
+export function inferGoal(current_weight_kg: number | null, target_weight_kg: number | null): Goal {
+  if (!current_weight_kg || !target_weight_kg) return 'maintenance'
+  const delta = target_weight_kg - current_weight_kg
+  if (delta < -GOAL_THRESHOLD_KG) return 'cut'
+  if (delta > GOAL_THRESHOLD_KG) return 'bulk'
+  return 'maintenance'
+}
+
+// Protein per kg by goal — within ISSN range 1.6–2.2 g/kg
+// Higher on cut to preserve LBM under deficit (Helms et al.)
+// Lower on bulk to leave room for carbs (primary performance fuel)
+export const PROTEIN_PER_KG: Record<Goal, number> = {
+  cut: 2.2,
+  maintenance: 1.8,
+  bulk: 1.7,
+}
+
+// Fat % of calories
+// 25 % = minimum for hormonal health (Helms et al., bulk/cut review)
+// Bulk allows slightly more (carbs fall a bit but protein is also lower)
+export const FAT_PCT: Record<Goal, number> = {
+  cut: 0.25,
+  maintenance: 0.25,
+  bulk: 0.25,
+}
 
 /**
- * Recommended macros for active gym users:
- *   Protein:  1.8 g / kg body weight (supports muscle growth & retention)
- *   Fat:      25 % of calorie goal
- *   Carbs:    remainder
+ * Recommended macros for active gym users (goal-aware).
+ * Carbs = remainder after protein and fat.
  */
-export function calcSuggestedMacros(calorieGoal: number, weight_kg: number) {
-  const protein_g = Math.round(weight_kg * 1.8)
-  const fat_g = Math.round((calorieGoal * 0.25) / 9)
+export function calcSuggestedMacros(calorieGoal: number, weight_kg: number, goal: Goal = 'maintenance') {
+  const protein_g = Math.round(weight_kg * PROTEIN_PER_KG[goal])
+  const fat_g = Math.round((calorieGoal * FAT_PCT[goal]) / 9)
   const carbs_g = Math.max(0, Math.round((calorieGoal - protein_g * 4 - fat_g * 9) / 4))
   return { protein_g, fat_g, carbs_g }
 }
