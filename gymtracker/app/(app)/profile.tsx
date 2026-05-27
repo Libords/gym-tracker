@@ -30,7 +30,7 @@ export default function ProfileScreen() {
   const [proteinGoal, setProteinGoal] = useState('')
   const [carbsGoal, setCarbsGoal] = useState('')
   const [fatGoal, setFatGoal] = useState('')
-  const [hasPartnerCycle, setHasPartnerCycle] = useState(false)
+  const [cycleTrackingEnabled, setCycleTrackingEnabled] = useState(false)
   const [defaultRestSeconds, setDefaultRestSeconds] = useState('90')
   const [preferredUnit, setPreferredUnit] = useState<Unit>('kg')
   const [saving, setSaving] = useState(false)
@@ -51,7 +51,7 @@ export default function ProfileScreen() {
     setProteinGoal(profile.protein_goal_g?.toString() ?? '')
     setCarbsGoal(profile.carbs_goal_g?.toString() ?? '')
     setFatGoal(profile.fat_goal_g?.toString() ?? '')
-    setHasPartnerCycle(profile.has_partner_cycle ?? false)
+    setCycleTrackingEnabled(profile.cycle_tracking_enabled ?? false)
     setDefaultRestSeconds(String(profile.default_rest_seconds ?? 90))
     setPreferredUnit(profile.preferred_unit ?? 'kg')
   }, [profile])
@@ -97,7 +97,7 @@ export default function ProfileScreen() {
       protein_goal_g: proteinGoal ? parseInt(proteinGoal) : null,
       carbs_goal_g: carbsGoal ? parseInt(carbsGoal) : null,
       fat_goal_g: fatGoal ? parseInt(fatGoal) : null,
-      has_partner_cycle: hasPartnerCycle,
+      cycle_tracking_enabled: cycleTrackingEnabled,
       default_rest_seconds: clampRest(defaultRestSeconds),
       preferred_unit: preferredUnit,
     })
@@ -250,16 +250,16 @@ export default function ProfileScreen() {
         placeholder="90"
       />
 
-      {/* Partner cycle — only for men */}
-      {gender === 'male' && (
+      {/* Cycle tracking — opt-in for women, deliberately placed near the bottom for discretion */}
+      {gender === 'female' && (
         <>
-          <SectionHeader title="Cyklus partnerky" />
+          <SectionHeader title="Soukromí" />
           <View style={styles.switchRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.switchLabel}>Sledovat cyklus partnerky</Text>
-              <Text style={styles.switchDesc}>Zobrazí záložku v Progress pro sledování a tipy jak partnerku podpořit v každé fázi.</Text>
+              <Text style={styles.switchLabel}>Sledování menstruačního cyklu</Text>
+              <Text style={styles.switchDesc}>Když zapneš, v záložce Progress se ti objeví Cyklus s doporučeními pro trénink a výživu podle fáze. Vypnuté = záložka skrytá.</Text>
             </View>
-            <Switch value={hasPartnerCycle} onValueChange={setHasPartnerCycle} trackColor={{ true: '#2563eb' }} />
+            <Switch value={cycleTrackingEnabled} onValueChange={setCycleTrackingEnabled} trackColor={{ true: '#8b5cf6' }} />
           </View>
         </>
       )}

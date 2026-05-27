@@ -330,15 +330,18 @@ Tyto úvahy vznikly při prvním procházení appky v Expo Go po dokončení Spr
 
 **Priorita:** Vysoká — blokuje další testování. Řešit hned po Sprintu I (před UX redesignem 16.1).
 
-### 16.6 🔜 Partnerčin cyklus i pro ženské uživatelky (lesbické páry)
+### 16.6 ✅ Cycle privacy redesign — fáze 1 (2026-05-22)
 
-**Stav:** vize, malá změna.
+**Stav:** první iterace implementována. Lokální mužský partner-tracking odstraněn, ženský cyklus opt-in.
 
-**Problém:** Aktuálně toggle `has_partner_cycle` v profilu se zobrazuje jen mužům. Home screen: `cycleMode = profile?.gender === 'male' ? 'partner' : 'personal'` — žena nemá možnost sledovat partnerčin cyklus.
+**Co se změnilo:**
+- Žena: nový `profiles.cycle_tracking_enabled` flag. Default OFF pro nové, backfilled TRUE pro stávající ženy s logy. Když OFF, záložka Cyklus se nezobrazí v Progress ani phase chip na dashboardu. Toggle umístěn pod sekcí „Soukromí" v profilu (záměrně dolů, ne front-and-center).
+- Muž: kompletně odstraněn lokální „Cyklus partnerky" — žádný toggle v profilu, žádná záložka Partnerka v Progress, žádný cycleMode='partner' na dashboardu. Důvod: bez account linkingu (15.5) bylo neestetické, že muž zadává partnerce menstruaci sám. Existující data v `cycle_logs.is_partner=true` zůstávají v DB pro budoucí migraci (žádné destruktivní mazání).
+- Sloupec `profiles.has_partner_cycle` zůstává v DB (nepoužívaný v UI) — destruktivní změna by vyžadovala další migraci.
 
-**Idea:** Umožnit i ženě zapnout sledování partnerčina cyklu. Pak by měla 2 záložky: vlastní cyklus + partnerčin. Nebo přepínač mezi nimi.
-
-**Pozn.:** Lze udělat jako součást UX redesignu (16.1), kdy se stejně bude přepracovávat home/profil.
+**Co zbývá k vymýšlení (odloženo, není priorita pro teď):**
+- **Edukativní záložka** pro muže i ženy — obecné informace o ženském těle / fázích cyklu, o cvičení, dietách, fastingu, makrech, mikronutrientech. Diskrétně schované pod nějakou obecnější sekcí („o lidském těle" apod.), aby to nebylo front-and-center. Do budoucna affiliate odkazy / monetizace. Existující `PARTNER_PERSPECTIVE` data v `src/types/cycle.ts` jsou připravená k recyklaci.
+- **Při příchodu couple linkingu** (15.5): re-aktivovat sdílení fáze partnerky s per-phase consent. Žena vybírá, které fáze chce s mužem sdílet; nesdílené dostávají generickou hlášku ve smyslu „partnerka tuto fázi nesdílí". Žádné konkrétní dny — jen fáze. Muž i žena musí mít odpovídající toggle zapnutý.
 
 ### 16.7 ✅ Drobné opravy hotové v této session
 

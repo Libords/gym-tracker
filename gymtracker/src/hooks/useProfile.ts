@@ -24,6 +24,7 @@ export type Profile = {
   carbs_goal_g: number | null
   fat_goal_g: number | null
   has_partner_cycle: boolean
+  cycle_tracking_enabled: boolean
   onboarding_done: boolean
   default_rest_seconds: number
   preferred_unit: Unit
@@ -60,6 +61,7 @@ export function useProfile() {
           carbs_goal_g: null,
           fat_goal_g: null,
           has_partner_cycle: false,
+          cycle_tracking_enabled: false,
           onboarding_done: false,
           default_rest_seconds: 90,
           preferred_unit: 'kg',

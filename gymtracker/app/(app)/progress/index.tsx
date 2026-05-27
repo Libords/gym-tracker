@@ -21,13 +21,8 @@ const TAB_LABELS: Record<Tab, string> = {
 export default function ProgressScreen() {
   const [tab, setTab] = useState<Tab>('vaha')
   const { profile } = useProfile()
-  const isMale = profile?.gender === 'male'
-  const hasPartnerCycle = profile?.has_partner_cycle === true
-
-  // Tab label for cycle: women = Cyklus, men with partner = Partnerka
-  const cycleTabLabel = isMale ? '💑 Partnerka' : '🌙 Cyklus'
-  // Show cycle tab for women always, for men only if has_partner_cycle
-  const showCycleTab = !isMale || hasPartnerCycle
+  // Cycle tab is opt-in via profile setting (women only). Men no longer get partner-cycle tracking locally.
+  const showCycleTab = profile?.gender === 'female' && profile?.cycle_tracking_enabled === true
 
   return (
     <View style={styles.container}>
@@ -40,7 +35,7 @@ export default function ProgressScreen() {
             onPress={() => setTab(t)}
           >
             <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
-              {t === 'cyklus' ? cycleTabLabel : TAB_LABELS[t]}
+              {TAB_LABELS[t]}
             </Text>
           </TouchableOpacity>
         ))}
@@ -48,7 +43,7 @@ export default function ProgressScreen() {
 
       {tab === 'vaha' && <WeightTab />}
       {tab === 'miry' && <MeasurementsTab />}
-      {tab === 'cyklus' && <CycleTab partnerMode={isMale} />}
+      {tab === 'cyklus' && showCycleTab && <CycleTab />}
     </View>
   )
 }

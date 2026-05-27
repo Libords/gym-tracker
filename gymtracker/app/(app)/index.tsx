@@ -34,9 +34,9 @@ export default function Dashboard() {
   const today = new Date().toISOString().split('T')[0]
   const { dailyMacros, loading: nLoading } = useDailyMeals(today)
   const { logs: weightLogs, loading: wgLoading } = useWeightLogs()
-  // For women show personal cycle; for men show partner cycle if enabled
-  const cycleMode = profile?.gender === 'male' ? 'partner' : 'personal'
-  const { cycleInfo } = useCycleLogs(cycleMode)
+  // Cycle chip is shown only for women who opted into tracking (men no longer track partner cycle locally)
+  const showCycle = profile?.gender === 'female' && profile?.cycle_tracking_enabled === true
+  const { cycleInfo } = useCycleLogs('personal')
 
   // Redirect to onboarding if not completed
   useEffect(() => {
@@ -76,8 +76,8 @@ export default function Dashboard() {
         </TouchableOpacity>
       </View>
 
-      {/* Cycle phase chip (if available) */}
-      {cycleInfo && (() => {
+      {/* Cycle phase chip — only when tracking is opted in */}
+      {showCycle && cycleInfo && (() => {
         const pd = PHASE_DATA[cycleInfo.phase]
         return (
           <TouchableOpacity

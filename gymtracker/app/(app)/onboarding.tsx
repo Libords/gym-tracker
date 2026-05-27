@@ -243,11 +243,16 @@ function Step2Stats(p: {
       </View>
 
       {bmi && bmiCat && (
-        <View style={[styles.bmiChip, { backgroundColor: bmiCat.color + '20', borderColor: bmiCat.color }]}>
-          <Text style={[styles.bmiText, { color: bmiCat.color }]}>
-            BMI: {bmi} — {bmiCat.label}
+        <>
+          <View style={[styles.bmiChip, { backgroundColor: bmiCat.color + '20', borderColor: bmiCat.color }]}>
+            <Text style={[styles.bmiText, { color: bmiCat.color }]}>
+              BMI: {bmi} — {bmiCat.label}
+            </Text>
+          </View>
+          <Text style={styles.bmiDisclaimer}>
+            ⓘ BMI nezohledňuje složení těla — svalová hmota váží víc než tuk, takže silově trénující lidé často vyjdou jako „nadváha", aniž by měli problém. Bere to jen jako orientační populační číslo. Lepší signál o tvém těle dávají tělesné míry (pas, boky), trend hmotnosti a jak se cítíš ve výkonu. Vše najdeš v záložce Progress.
           </Text>
-        </View>
+        </>
       )}
 
       <Text style={styles.inputLabel}>Cílová váha (kg) — volitelné</Text>
@@ -490,8 +495,9 @@ const styles = StyleSheet.create({
   inputLabel: { fontSize: 13, color: '#666', marginBottom: 6, fontWeight: '500' },
   input: { borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 10, padding: 14, fontSize: 16, marginBottom: 14, backgroundColor: '#fafafa' },
   twoCol: { flexDirection: 'row' },
-  bmiChip: { borderWidth: 1, borderRadius: 8, padding: 10, marginBottom: 14, alignItems: 'center' },
+  bmiChip: { borderWidth: 1, borderRadius: 8, padding: 10, marginBottom: 6, alignItems: 'center' },
   bmiText: { fontSize: 14, fontWeight: '600' },
+  bmiDisclaimer: { fontSize: 11, color: '#64748b', lineHeight: 16, marginBottom: 14, paddingHorizontal: 2 },
 
   optionCard: {
     flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 12,
