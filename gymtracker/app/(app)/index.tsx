@@ -38,9 +38,10 @@ export default function Dashboard() {
   const showCycle = profile?.gender === 'female' && profile?.cycle_tracking_enabled === true
   const { cycleInfo } = useCycleLogs('personal')
 
-  // Redirect to onboarding if not completed
+  // Redirect to onboarding if profile is missing or onboarding not done
   useEffect(() => {
-    if (!pLoading && profile && !profile.onboarding_done) {
+    if (pLoading) return
+    if (!profile || !profile.onboarding_done) {
       router.replace('/(app)/onboarding')
     }
   }, [pLoading, profile])
@@ -58,8 +59,8 @@ export default function Dashboard() {
   const calorieGoal = profile?.calorie_goal ?? 2000
   const caloriePct = Math.min(dailyMacros.calories / calorieGoal, 1)
 
-  // Show blank screen while checking onboarding to avoid flash
-  if (pLoading || (profile && !profile.onboarding_done)) {
+  // Show blank screen while loading or while redirecting to onboarding (avoids flash)
+  if (pLoading || !profile || !profile.onboarding_done) {
     return <View style={{ flex: 1, backgroundColor: '#fff' }} />
   }
 

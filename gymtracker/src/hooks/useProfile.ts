@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import type { JobActivity, TrainingType, Gender } from '../lib/bmr'
@@ -35,49 +35,40 @@ export function useProfile() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (!user) return
-    supabase
+  const fetchProfile = useCallback(async () => {
+    if (!user) {
+      setProfile(null)
+      setLoading(false)
+      return
+    }
+    const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', user.id)
-      .single()
-      .then(({ data }) => {
-        setProfile(data ?? {
-          id: user.id,
-          full_name: null,
-          age: null,
-          gender: null,
-          birth_year: null,
-          height_cm: null,
-          current_weight_kg: null,
-          target_weight_kg: null,
-          job_activity: null,
-          training_days_per_week: null,
-          training_avg_duration_min: null,
-          training_types: null,
-          calorie_goal: null,
-          protein_goal_g: null,
-          carbs_goal_g: null,
-          fat_goal_g: null,
-          has_partner_cycle: false,
-          cycle_tracking_enabled: false,
-          onboarding_done: false,
-          default_rest_seconds: 90,
-          preferred_unit: 'kg',
-        })
-        setLoading(false)
-      })
+      .maybeSingle()
+    if (error) {
+      console.error('[useProfile] fetch error:', error)
+    }
+    setProfile((data as Profile | null) ?? null)
+    setLoading(false)
   }, [user])
+
+  useEffect(() => { fetchProfile() }, [fetchProfile])
 
   const updateProfile = async (updates: Partial<Omit<Profile, 'id'>>) => {
     if (!user) return { error: new Error('Nepřihlášen') }
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .upsert({ id: user.id, ...updates })
-    if (!error) setProfile(prev => prev ? { ...prev, ...updates } : null)
-    return { error }
+      .select()
+      .single()
+    if (error) {
+      console.error('[useProfile] upsert error:', error)
+      return { error }
+    }
+    if (data) setProfile(data as Profile)
+    return { error: null }
   }
 
-  return { profile, loading, updateProfile }
+  return { profile, loading, updateProfile, refetch: fetchProfile }
 }

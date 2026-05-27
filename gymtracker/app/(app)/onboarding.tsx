@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
-  TextInput, ActivityIndicator, KeyboardAvoidingView, Platform,
+  TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Alert,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useProfile } from '../../src/hooks/useProfile'
@@ -89,7 +89,7 @@ export default function OnboardingScreen() {
     const c = getCalcs()
     const macros = c ? calcSuggestedMacros(calGoal, w, c.goal) : { protein_g: 140, carbs_g: 200, fat_g: 60 }
 
-    await updateProfile({
+    const { error } = await updateProfile({
       full_name: fullName.trim() || null,
       gender: gender!,
       birth_year: parseInt(birthYear),
@@ -106,6 +106,12 @@ export default function OnboardingScreen() {
       fat_goal_g: macros.fat_g,
       onboarding_done: true,
     })
+
+    if (error) {
+      setSaving(false)
+      Alert.alert('Nepodařilo se uložit profil', error.message ?? 'Zkus to znovu nebo zkontroluj připojení.')
+      return
+    }
 
     // Save initial weight log
     if (w) {
@@ -426,7 +432,8 @@ function Step5Metabolism(p: {
       />
       <Text style={styles.calorieHint}>
         Hubnutí → −200 až −500 kcal pod TDEE. Nedoporučuje se klesat pod BMR ({calcs.bmr} kcal).{'\n'}
-        Nabírání → mírný surplus +100 až +300 kcal pro rychlejší růst. Nabírat jde i v maintenance — pomaleji, ale s menším podílem tuku.
+        Nabírání hmotnosti (vyšší číslo na váze) → mírný surplus +100 až +300 kcal nad TDEE je obvykle potřeba.{'\n'}
+        Nabírání svalu → surplus podmínkou není. Sval roste i v maintenance, často i v mírném deficitu (recomp) — zvlášť u začátečníků, návratu po pauze, nebo při vyšším procentu tuku. Surplus dává jen rychlejší tempo a lepší poměr svalu k tuku.
       </Text>
       {belowBMR && (
         <View style={styles.warnCard}>
@@ -447,8 +454,8 @@ function Step5Metabolism(p: {
         <Text style={styles.sourceTitle}>Odkud čísla pocházejí</Text>
         <Text style={styles.sourceText}>
           • <Text style={styles.sourceBold}>Bílkoviny {proteinPerKg} g/kg</Text> — v rámci doporučení ISSN (1,6–2,2 g/kg pro aktivně cvičící). Vyšší na cutu pro udržení svaloviny, nižší na bulku, aby zbylo na sacharidy.{'\n'}
-          • <Text style={styles.sourceBold}>Tuky {fatPct} % kcal</Text> — minimum pro hormonální zdraví (Helms et al., bulk/cut review).{'\n'}
-          • <Text style={styles.sourceBold}>Sacharidy zbytek</Text> — primární palivo pro výkon v posilovně.
+          • <Text style={styles.sourceBold}>Tuky {fatPct} % kcal</Text> — obecné doporučení (~20–35 % dle WHO/AMDR), {fatPct} % bereme jako rozumný střed, který pokrývá minimum pro hormonální zdraví (Helms et al.). Pokud ti vyhovuje jiný styl (lowcarb, keto, lowfat), uprav si to v profilu.{'\n'}
+          • <Text style={styles.sourceBold}>Sacharidy zbytek</Text> — dopočítané jako zbytek kalorického cíle po bílkovinách a tucích. Pro většinu lidí hlavní zdroj energie; konkrétní množství závisí na úrovni aktivity a osobních preferencích.
         </Text>
       </View>
 
