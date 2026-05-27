@@ -3,6 +3,7 @@ import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
   Alert, TextInput, Modal, ActivityIndicator, SectionList,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useWorkouts } from '../../../src/hooks/useWorkouts'
 import type { Workout } from '../../../src/types/workout'
@@ -72,7 +73,7 @@ export default function WorkoutsScreen() {
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" /></View>
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView edges={['top']} style={styles.container}>
       <View style={styles.titleRow}>
         <Text style={styles.title}>Tréninky</Text>
         <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -127,7 +128,7 @@ export default function WorkoutsScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   )
 }
 

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { ScrollView, View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useAuth } from '../../src/context/AuthContext'
 import { useProfile } from '../../src/hooks/useProfile'
@@ -65,6 +66,7 @@ export default function Dashboard() {
   }
 
   return (
+    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: '#fff' }}>
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
       {/* Header */}
       <View style={styles.header}>
@@ -220,6 +222,7 @@ export default function Dashboard() {
         )
       })()}
     </ScrollView>
+    </SafeAreaView>
   )
 }
 

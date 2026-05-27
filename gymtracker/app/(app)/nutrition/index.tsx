@@ -3,6 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   ActivityIndicator,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useDailyMeals } from '../../../src/hooks/useNutrition'
 import { useProfile } from '../../../src/hooks/useProfile'
@@ -43,6 +44,7 @@ export default function NutritionScreen() {
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" /></View>
 
   return (
+    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: '#fff' }}>
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
       <Text style={styles.title}>Jídelníček</Text>
       <Text style={styles.dateLabel}>{new Date(date).toLocaleDateString('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long' })}</Text>
@@ -125,6 +127,7 @@ export default function NutritionScreen() {
         </View>
       )}
     </ScrollView>
+    </SafeAreaView>
   )
 }
 

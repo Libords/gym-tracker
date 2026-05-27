@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, ActivityIndicator, Alert, ScrollView, Switch,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useProfile } from '../../src/hooks/useProfile'
 import { useAuth } from '../../src/context/AuthContext'
 import {
@@ -109,6 +110,7 @@ export default function ProfileScreen() {
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" /></View>
 
   return (
+    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: '#fff' }}>
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Můj profil</Text>
 
@@ -272,6 +274,7 @@ export default function ProfileScreen() {
         <Text style={styles.signOutText}>Odhlásit se</Text>
       </TouchableOpacity>
     </ScrollView>
+    </SafeAreaView>
   )
 }
 

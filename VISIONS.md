@@ -275,21 +275,29 @@ Tyto myšlenky vznikly při práci na Sprintech C–G (mikronutrienty, cyklus, o
 
 Tyto úvahy vznikly při prvním procházení appky v Expo Go po dokončení Sprintu I (Workout UX Polish).
 
-### 16.1 🔜 UX restrukturalizace — top-level navigace
+### 16.1 🔜 UX restrukturalizace — top-level navigace (Sprint J kandidát)
 
-**Stav:** vize, neimplementováno. Důležitý redesign.
+**Stav:** spec finalizovaná 2026-05-22, neimplementováno. Bude vlastní sprint.
 
-**Problém:** Aktuální bottom-tab navigace má moc záložek, je v tom zmatek a uživatel se v appce nevyzná.
+**Problém:** Aktuální flat bottom-tab navigace (Přehled / Tréninky / Výživa / Progress / Profil) má moc záložek vedle sebe a míchá příliš odlišné kontexty.
 
-**Idea:**
-- Místo plochého bottom-tabu rozdělit appku na **kontexty/režimy**: tréninkový režim, výživový režim, případně další (progress, edukace).
-- Mezi režimy se přepínat buď:
-  - **(A)** přepínačem nahoře v hlavičce, nebo
-  - **(B)** ikonkou profilu vlevo nahoře → rozklikávací menu (mode selector + nastavení + osobní údaje).
-- Konkrétní layout ještě nerozhodnut. Libor zkusí najít existující appku (nemusí být fitness), která má UX layout, jaký by se mu líbil, a donese referenci.
-- Bottom tab může zůstat pro nejčastější akce **v rámci aktivního režimu**, ale ne pro přepínání režimů.
+**Cílový layout (rozhodnuto):**
+- **Hamburger / drawer vlevo nahoře** — permanentně viditelné „tři čárky" na všech screens. Po kliknutí vyjede z levé strany side drawer.
+- **Drawer obsah** (mode picker, finální seznam TBD): Domů (přehled), Trénink, Jídelníček, Progress, Profil, Vzdělávání (placeholder pro budoucí edukativní hub). Postupně dodáme i Nastavení, Pomoc atd.
+- **Per-mode bottom tabs** — max **5 tlačítek** per mode, kontext-specific. Příklad:
+  - **Trénink**: Dnes / Šablony / Historie / Cviky
+  - **Jídelníček**: Dnes / Historie / Vyhledat / Statistiky
+  - **Progress**: Váha / Míry / (Cyklus jen pro ženy s opt-in)
+- **Domovská stránka** — landing po otevření appky, neutrální „přehled". Obsah TBD: progres / statistiky / kalendář tréninků / cesta uživatele. Doladí se v rámci sprintu.
+- **Back navigation** — standardní iOS swipe right-to-left (`gestureEnabled` na Stack screens). Drawer se otevírá swipe-from-left.
+- **Safe area** — všechny screens musí respektovat safe area (Dynamic Island / status bar / home indicator). Drobnou opravu pro stávající screens dodáno 2026-05-22 (SafeAreaProvider + SafeAreaView edges=['top']).
 
-**How to apply:** Až bude Libor mít referenci, navrhnout konkrétní layout. Tohle bude samostatný sprint po dokončení testování Sprintu I a opravení bug-fixů (16.5).
+**Technicky:**
+- `expo-router/drawer` pro drawer navigátor.
+- Refaktor route struktury: `app/(app)/_layout.tsx` přejde z Tabs na Drawer, uvnitř každý mode = vlastní Tabs layout (`app/(app)/(training)/_layout.tsx` atd.). Nebo zachování flat layoutu s vlastní drawer komponentou — k rozhodnutí v Sprint J specifikaci.
+- Custom header s hamburger ikonou (Ionicons `menu-outline`) — pravděpodobně `react-native-drawer-layout` + custom header komponenta, ne expo-router default header.
+
+**How to apply:** Vlastní sprint (Sprint J), spustit `/speckit.specify` po dokončení Sprint I cleanupu (16.5 retest po reload, případné rezidualní bugy). Reference layoutu: standardní mobile drawer pattern à la Gmail / Notion / většina enterprise mobile apps.
 
 ### 16.2 🔜 Onboarding 2.0 — science disclaimer + přesnější makra
 

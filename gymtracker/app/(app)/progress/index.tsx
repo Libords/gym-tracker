@@ -3,6 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   TextInput, Modal, Alert, ActivityIndicator,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { LineChart } from 'react-native-gifted-charts'
 import { useWeightLogs, useBodyMeasurements } from '../../../src/hooks/useProgress'
 import { useCycleLogs } from '../../../src/hooks/useCycle'
@@ -25,7 +26,7 @@ export default function ProgressScreen() {
   const showCycleTab = profile?.gender === 'female' && profile?.cycle_tracking_enabled === true
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView edges={['top']} style={styles.container}>
       <Text style={styles.title}>Progress</Text>
       <View style={styles.tabs}>
         {(['vaha', 'miry', ...(showCycleTab ? ['cyklus'] : [])] as Tab[]).map(t => (
@@ -44,7 +45,7 @@ export default function ProgressScreen() {
       {tab === 'vaha' && <WeightTab />}
       {tab === 'miry' && <MeasurementsTab />}
       {tab === 'cyklus' && showCycleTab && <CycleTab />}
-    </View>
+    </SafeAreaView>
   )
 }
 
