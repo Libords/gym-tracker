@@ -199,15 +199,16 @@ export default function TemplateEditorScreen() {
             </TouchableOpacity>
           </View>
         </View>
-      </Modal>
 
-      <CreateExerciseModal
-        visible={createModalVisible}
-        initialName={search}
-        onClose={() => setCreateModalVisible(false)}
-        onSubmit={createExercise}
-        onCreated={(ex) => handleAddExercise(ex)}
-      />
+        {/* Nested inside the picker modal so it can present over it (iOS stacked-modal fix) */}
+        <CreateExerciseModal
+          visible={createModalVisible}
+          initialName={search}
+          onClose={() => setCreateModalVisible(false)}
+          onSubmit={createExercise}
+          onCreated={(ex) => handleAddExercise(ex)}
+        />
+      </Modal>
     </View>
   )
 }

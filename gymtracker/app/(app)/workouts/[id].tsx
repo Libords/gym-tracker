@@ -244,6 +244,15 @@ export default function WorkoutDetailScreen() {
             )}
           </View>
         </View>
+
+        {/* Nested inside the picker modal so it can present over it (iOS stacked-modal fix) */}
+        <CreateExerciseModal
+          visible={createModalVisible}
+          initialName={search}
+          onClose={() => setCreateModalVisible(false)}
+          onSubmit={createExercise}
+          onCreated={(ex) => setSelectedExercise(ex)}
+        />
       </Modal>
 
       {/* Detail cviku */}
@@ -277,14 +286,6 @@ export default function WorkoutDetailScreen() {
           </View>
         </View>
       </Modal>
-
-      <CreateExerciseModal
-        visible={createModalVisible}
-        initialName={search}
-        onClose={() => setCreateModalVisible(false)}
-        onSubmit={createExercise}
-        onCreated={(ex) => setSelectedExercise(ex)}
-      />
     </View>
   )
 }
