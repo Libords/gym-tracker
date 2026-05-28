@@ -8,21 +8,38 @@
 -- This caused the blank dashboard + empty Profile form after onboarding:
 -- onboarding's upsert silently failed on the SELECT portion (.select().single())
 -- and useProfile's later fetch hit the same wall.
+--
+-- Defensive: grants are applied only to tables that actually exist, so the
+-- migration never fails if some table hasn't been created yet (e.g. a later
+-- sprint migration wasn't run). Re-runnable / idempotent.
 
-GRANT SELECT, INSERT, UPDATE ON public.profiles TO authenticated;
+DO $$
+DECLARE
+  t text;
+  crud_tables text[] := ARRAY[
+    'profiles',
+    'cycle_logs',
+    'workouts',
+    'workout_sets',
+    'workout_templates',
+    'template_exercises',
+    'meals',
+    'meal_items',
+    'food_items',
+    'weight_logs',
+    'body_measurements'
+  ];
+BEGIN
+  FOREACH t IN ARRAY crud_tables LOOP
+    IF to_regclass('public.' || t) IS NOT NULL THEN
+      EXECUTE format(
+        'GRANT SELECT, INSERT, UPDATE, DELETE ON public.%I TO authenticated', t
+      );
+    END IF;
+  END LOOP;
 
--- Defensive: same fix for other user-owned tables that might share the
--- problem. If grants are already in place, GRANT is idempotent (no-op).
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.cycle_logs        TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.workouts          TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.workout_sets      TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.workout_templates TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.template_exercises TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.meals             TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.meal_items        TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.food_items        TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.weight_logs       TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.body_measurements TO authenticated;
-
--- Read-only public data
-GRANT SELECT ON public.exercises TO authenticated;
+  -- Read-only public reference data
+  IF to_regclass('public.exercises') IS NOT NULL THEN
+    EXECUTE 'GRANT SELECT ON public.exercises TO authenticated';
+  END IF;
+END $$;
