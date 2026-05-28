@@ -5,6 +5,57 @@ Aktuální stav projektu pro předání kontextu v nové konverzaci.
 
 ---
 
+## 🔴 AKTUÁLNÍ STAV — 2026-05-28 (handoff pro pokračování na jiném agentu, např. GPT Codex)
+
+**Branch:** `001-workout-ux-polish`. Pracovní strom je **čistý** (vše commitnuto). **10 lokálních commitů NEpushnutých** na `origin`. Pokud nový agent běží na **stejném počítači** (stejný local checkout), commity tam jsou — push není nutný. Pokud běží v **jiném prostředí (cloud)**, je nutné nejdřív `git push` (push je sdílená akce → potvrdit s uživatelem).
+
+### ⚠️ NEDODĚLANÉ KROKY NA UŽIVATELI — DB migrace, které je TŘEBA aplikovat v Supabase SQL editoru
+
+Aplikuj v tomto pořadí (každou zvlášť → Run). Idempotentní, bezpečné. Bez nich appka nebude fungovat správně:
+
+1. **`supabase/migrations/20260528_fix_exercise_body_part.sql`** — opraví exercise filtr (Hrudník vracel 0 cviků). *(Uživatel řekl, že tuto UŽ aplikoval — ověřit dotazem `SELECT body_part, COUNT(*) FROM exercises GROUP BY body_part;`)*
+2. **`supabase/migrations/20260528_exercise_images.sql`** — přidá `exercises.image_url` sloupec. **Pravděpodobně JEŠTĚ NEaplikováno.**
+3. **Po #2: re-run seed skriptu** (v `gymtracker/`): `npx ts-node scripts/seed-exercises.ts` — doplní obrázky + opravené body_part k 873 cvikům. Vyžaduje `SUPABASE_SERVICE_ROLE_KEY` v `.env`. **Spouští uživatel** (agent nemá klíče). Bez tohoto budou v UI placeholdery s prvními písmeny (ne bug).
+
+Dříve aplikované migrace (hotové): `20260520_workout_templates_and_units.sql`, `20260522_cycle_visibility.sql`, `20260522_profile_grants.sql`.
+
+### Co bylo uděláno v této sérii sessions (2026-05-27 → 28), vše commitnuto
+
+- **VISIONS 16.2** — goal-aware makra (`calcSuggestedMacros(cal, kg, goal)`, goal odvozen z target vs current weight ±2 kg), science-honest onboarding messaging (surplus≠nutnost pro sval, BMR-floor warning, TDEE jako průměr, disclaimer, zdroje čísel ISSN/Helms/WHO-AMDR).
+- **VISIONS 16.6** — cycle privacy: ženský opt-in toggle (`profiles.cycle_tracking_enabled`), mužův lokální partner-tracking odstraněn z UI. Edukativní hub odložen.
+- **BMI** — disclaimer pod BMI chipem v onboardingu (kategorie zůstává, user volba).
+- **VISIONS 16.5 (uzavřeno)** — blank dashboard + nepředvyplněný profil. ROOT CAUSE: chyběl SQL GRANT na `profiles` (RLS bez baseline GRANTu → 42501). `useProfile` přepsán (žádný synthesized fallback, vrací null; `updateProfile` chainuje `.select().single()`). Ověřeno na device = funguje.
+- **Safe area** — SafeAreaProvider + SafeAreaView edges=['top'] na všech top-level screens (překryv s Dynamic Island).
+- **Nested tabs fix** — `_layout.tsx` Stack do workouts/, nutrition/, progress/ (bottom bar měl 11 tabů, teď 5).
+- **VISIONS 16.9** — exercise body_part filtr fix (viz migrace #1). `src/lib/bodyParts.ts` je single source of truth (sdílí UI filtr, seed, migrace).
+- **VISIONS 16.10** — exercise obrázky (1. iterace): `ExerciseThumbnail` komponenta (RN Image + first-letter placeholder), thumbnaily v obou pickerech + detail modalu, seed doplňuje `image_url`. Čeká migrace #2 + re-run seedu.
+
+### CO JE DALŠÍ (next up) — VISIONS 16.11 Strong-style workout flow
+
+Velký redesign workout flow podle Strong screenshotů. **Detailní spec je ve [VISIONS.md](VISIONS.md) sekce 16.11** — čti ji celou před začátkem. Shrnutí:
+- **A)** Start Workout landing (Quick Start „prázdný trénink" + karty šablon s preview).
+- **B)** Aktivní trénink = per-exercise tabulka (Set/Previous/kg/Reps/✓, warmup `W`, inline zadávání, rest timer mezi sériemi po odškrtnutí, +Přidat sérii).
+- **C)** Detail šablony modal (thumbnaily, počet sérií, partie, „Začít trénink" → `startFromTemplate` už existuje).
+- **D)** Historie s 1RM sloupcem (Epley) + PR odznaky (REPS/1RM/VOL/WEIGHT).
+- **Datově:** `workout_sets` přidat `is_warmup boolean`; Previous lookup (poslední set daného exercise_id usera); PR tracking (on-the-fly nebo `personal_records` tabulka).
+- Doporučeno: vlastní sprint (K), `/speckit.specify`, rozdělit na milestony.
+
+Ostatní otevřené VISIONS: 16.1 (drawer nav redesign, spec hotová), 16.3 (dietní presety lowcarb/keto), 16.4 (per-type training frequency).
+
+### Závazná pravidla pro pokračování (NEPORUŠOVAT)
+
+- **Čeština UI, angličtina kód + commity + komentáře.** TypeScript only, žádný `.js` v `src/`.
+- **Po každém sub-milestonu:** `cd gymtracker && npx tsc --noEmit` MUSÍ projít (exit 0), pak teprve commit. Conventional Commits (`feat:`/`fix:`/`docs:`/`refactor:`).
+- **`npm install` (nové deps) a Supabase migrace VYŽADUJÍ schválení uživatele.** Migrace agent NEspouští sám — napíše SQL soubor do `supabase/migrations/` a uživatel ho aplikuje v Supabase SQL editoru.
+- **Migrace piš defenzivně** (`IF NOT EXISTS`, `to_regclass` checky) — Supabase je transakční, jeden fail rollbackne vše.
+- **Nikdy** secrets/klíče do kódu (jen `.env`, necommitovat). **Nikdy** broken build v gitu. **Nepushovat** bez potvrzení uživatele.
+- **Po každém kroku aktualizuj `DEV_DIARY.md`** (formát: `YYYY-MM-DD — popis — OK/FAIL`). Nové vize zapisuj do `VISIONS.md`.
+- `npm install` v tomto projektu vyžaduje `--legacy-peer-deps` (peer dep konflikt react@19.1 vs react-dom@19.2.6, Expo SDK 54).
+- Supabase projekt: `kskbnvtxcyfiubpobzco`. Migrace se aplikují přes Dashboard → SQL Editor (ne CLI).
+- Source of truth dokumenty: `PROJECT_PLAN.md`, `VISIONS.md` (vize 16.x), `DEV_DIARY.md`, `AGENTS.md`, `CLAUDE.md`, `SECURITY.md`.
+
+---
+
 ## Přehled projektu
 
 **GymTracker** — mobilní aplikace (iOS + Android) pro fitness sledování.
