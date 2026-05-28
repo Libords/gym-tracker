@@ -6,6 +6,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { supabase } from '../../../../src/lib/supabase'
 import { useUnitPreference } from '../../../../src/hooks/useUnitPreference'
 import { formatWeight } from '../../../../src/lib/units'
+import { estimate1RM } from '../../../../src/lib/oneRepMax'
 import type { Exercise, Workout, WorkoutSet } from '../../../../src/types/workout'
 
 type SetWithExercise = WorkoutSet & { exercise?: Exercise }
@@ -16,12 +17,14 @@ type ExerciseGroup = {
   sets: SetWithExercise[]
   max_weight_kg: number | null
   total_volume_kg: number
+  best_1rm: number | null
 }
 
 function groupByExercise(sets: SetWithExercise[]): ExerciseGroup[] {
   const map = new Map<string, ExerciseGroup>()
   for (const s of sets) {
     const name = s.exercise?.name ?? '?'
+    const oneRm = estimate1RM(s.weight_kg, s.reps)
     const existing = map.get(s.exercise_id)
     if (existing) {
       existing.sets.push(s)
@@ -31,6 +34,9 @@ function groupByExercise(sets: SetWithExercise[]): ExerciseGroup[] {
       if (s.reps != null && s.weight_kg != null) {
         existing.total_volume_kg += s.reps * s.weight_kg
       }
+      if (oneRm != null) {
+        existing.best_1rm = Math.max(existing.best_1rm ?? 0, oneRm)
+      }
     } else {
       map.set(s.exercise_id, {
         exercise_id: s.exercise_id,
@@ -38,6 +44,7 @@ function groupByExercise(sets: SetWithExercise[]): ExerciseGroup[] {
         sets: [s],
         max_weight_kg: s.weight_kg ?? null,
         total_volume_kg: (s.reps != null && s.weight_kg != null) ? s.reps * s.weight_kg : 0,
+        best_1rm: oneRm,
       })
     }
   }
@@ -119,17 +126,24 @@ export default function HistoryDetailScreen() {
               <Text style={styles.exerciseMeta}>
                 Max {formatWeight(g.max_weight_kg, unit)}{'  •  '}
                 Objem {formatWeight(g.total_volume_kg, unit, { decimals: 0 })}
+                {g.best_1rm != null ? `  •  1RM ${formatWeight(g.best_1rm, unit)}` : ''}
               </Text>
             </View>
-            {g.sets.map((s, idx) => (
-              <View key={s.id} style={styles.setRow}>
-                <Text style={styles.setNumber}>{idx + 1}.</Text>
-                <Text style={styles.setText}>
-                  {s.reps != null ? `${s.reps} opak.` : '—'}
-                  {s.weight_kg != null ? `  •  ${formatWeight(s.weight_kg, unit)}` : ''}
-                </Text>
-              </View>
-            ))}
+            {g.sets.map((s, idx) => {
+              const oneRm = estimate1RM(s.weight_kg, s.reps)
+              return (
+                <View key={s.id} style={styles.setRow}>
+                  <Text style={styles.setNumber}>{idx + 1}.</Text>
+                  <Text style={styles.setText}>
+                    {s.reps != null ? `${s.reps} opak.` : '—'}
+                    {s.weight_kg != null ? `  •  ${formatWeight(s.weight_kg, unit)}` : ''}
+                  </Text>
+                  {oneRm != null && (
+                    <Text style={styles.set1rm}>1RM {formatWeight(oneRm, unit)}</Text>
+                  )}
+                </View>
+              )
+            })}
           </View>
         ))}
       </ScrollView>
@@ -162,7 +176,8 @@ const styles = StyleSheet.create({
   exerciseHeader: { borderBottomWidth: 1, borderBottomColor: '#e2e8f0', paddingBottom: 6, marginBottom: 6 },
   exerciseName: { fontSize: 16, fontWeight: '700', color: '#1a1a1a' },
   exerciseMeta: { color: '#888', fontSize: 12, marginTop: 2 },
-  setRow: { flexDirection: 'row', paddingVertical: 6, gap: 12 },
+  setRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, gap: 12 },
   setNumber: { color: '#888', fontSize: 14, width: 24 },
-  setText: { color: '#1a1a1a', fontSize: 14 },
+  setText: { color: '#1a1a1a', fontSize: 14, flex: 1 },
+  set1rm: { color: '#64748b', fontSize: 12, fontWeight: '600' },
 })
