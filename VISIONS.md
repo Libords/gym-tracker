@@ -372,22 +372,46 @@ Tyto úvahy vznikly při prvním procházení appky v Expo Go po dokončení Spr
 
 ### 16.10 🔜 Exercise obrázky (Strong-style)
 
-**Stav:** vize, neimplementováno.
+**Stav:** vize, neimplementováno. Reference: Strong screenshoty 2026-05-28.
 
-**Idea:** U každého cviku zobrazit obrázek/animaci, ne jen název (jako Strong). Zdroj: free-exercise-db má `images[]` pole (relativní cesty k PNG v jejich repu, raw URL `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/<path>`). Při importu jsme je zahodili — stačí přidat sloupec `exercises.image_url` (nebo `images text[]`), doplnit do seed skriptu a zobrazit v pickeru + detailu. 2 obrázky per cvik (start/end pozice).
+**Upřesnění od Libora:** Obrázky stačí **při hledání/výběru cviku** (exercise picker) a v **detailu šablony** (náhled cviků). V **běžícím tréninku už být nemusí** — tam jde o rychlé zadávání, ne o reference.
 
-**Pozn.:** Obrázky jsou hostované na GitHubu — pro produkci zvážit mirror do Supabase Storage / R2 (rychlost, nezávislost na third-party). Pro MVP stačí raw GitHub URL.
+**Idea:** Zdroj: free-exercise-db má `images[]` pole (relativní cesty k PNG, raw URL `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/<path>`). Při importu jsme je zahodili. Plán:
+- Migrace: `ALTER TABLE exercises ADD COLUMN image_url text` (stačí 1. obrázek; nebo `images text[]` pro 2 — start/end pozice).
+- Seed skript: doplnit `image_url: e.images[0]` (s raw GitHub prefixem). Re-run seedu (upsert by name) doplní obrázky k existujícím 873 cvikům — vyžaduje SERVICE_ROLE_KEY + ts-node, spustí uživatel.
+- UI: thumbnail v exercise pickeru (workouts/[id] + templates/[id]) + v detailu šablony. **Placeholder = první písmeno názvu** v kolečku, když obrázek chybí (Strong to tak dělá — viz „L", „T", „H" na screenshotu).
 
-### 16.11 🔜 Strong-style zadávání sérií (redesign workout flow)
+**Pozn.:** Obrázky hostované na GitHubu — pro produkci zvážit mirror do Supabase Storage / R2 (rychlost, nezávislost na third-party). Pro MVP stačí raw GitHub URL. Pozor na lazy-loading + caching ve FlatList (expo-image má built-in cache, lepší než RN Image).
 
-**Stav:** vize, větší redesign. Reference: screenshoty ze Strongu (2026-05-28).
+### 16.11 🔜 Strong-style workout flow (velký redesign) — Sprint K kandidát
 
-**Co se Liborovi líbí na Strongu a chce přenést:**
-- **Per-set řádky** s sloupci: Set # / Previous (minule) / kg / Reps / ✓ (lock/done).
-- **Previous sloupec** — ukazuje co uživatel zvládl posledně u stejného cviku (např. „30 kg × 12"), jako reference pro dnešek.
-- **Warmup sety** — označené `W` (oranžově), nepočítají se do objemu jako pracovní série.
-- **Inline zadávání** — po každé sérii uživatel zapíše kg + reps přímo do předpřipravených řádků v běžícím tréninku. Přesně odpovídá reálnému postupu (série → zápis → rest → další série).
-- **Rest timer mezi sériemi** — odpočet zobrazený pod každou sérií (Sprint I rest timer už máme, jen jinak vizualizovaný — per-set místo globální).
-- **+ Add Set** tlačítko per cvik.
+**Stav:** vize, větší redesign. Reference: 4 screenshoty ze Strongu (2026-05-28).
 
-**Pozn.:** Tohle je přepracování workout-detail obrazovky (`workouts/[id].tsx`) z aktuálního „přidej jednu sérii" modelu na Strong-style tabulku. Velký kus — vlastní sprint. Datově: `workout_sets` už má reps/weight/set pořadí; přidat `is_warmup` flag a „previous" lookup (poslední workout_set pro daný exercise_id daného usera). Provázat s rest timerem per-set.
+**A) Start Workout obrazovka** (landing tréninkového režimu):
+- **Quick Start**: velké tlačítko „Začít prázdný trénink" (Start an Empty Workout).
+- **Templates sekce**: „Moje šablony (N)" + „Příklady šablon (N)" jako karty. Každá karta = název + preview seznam cviků (prvních pár názvů) + „naposledy provedeno před X dny".
+- Tap na šablonu → detail modal (viz C).
+
+**B) Aktivní trénink — per-exercise tabulka** (jádro redesignu):
+- Sloupce: **Set# / Previous / kg / Reps / ✓** (lock-done checkbox).
+- **Previous** = co uživatel zvládl posledně u stejného cviku (např. „80 kg × 8"), předvyplněné jako reference.
+- **Warmup série** = řádek označený `W` oranžově, nepočítá se do pracovního objemu.
+- **Inline zadávání**: kg + reps přímo do řádků během tréninku. Po odškrtnutí série (✓) se spustí **rest timer mezi sériemi** (2:00, zobrazený jako řádek pod sérií). Přesně kopíruje reálný postup: série → zápis → rest → další.
+- **+ Přidat sérii** per cvik, **+ Přidat cviky** dole.
+
+**C) Detail šablony (modal)**:
+- Hlavička: název + „naposledy provedeno před X dny" + Edit.
+- Seznam cviků s **thumbnaily** (16.10), počtem sérií (`2×`), svalovou partií (Back/Chest/Legs/…).
+- Dole velké **„Začít trénink"** — předvyplní aktivní trénink z šablony (už máme `startFromTemplate` ze Sprintu I, jen jiné UI).
+
+**D) Historie tréninku (detail)**:
+- Per-cvik: série s `W`/reps/váhou, **sloupec 1RM** (odhad přes Epley/Brzycki), **PR odznaky** (REPS / 1RM / VOL / WEIGHT) když série překoná osobní rekord.
+- Hlavička: čas, celkový objem (kg), počet PR.
+
+**Datový dopad:**
+- `workout_sets`: přidat `is_warmup boolean default false`. Reps/weight/pořadí už máme.
+- **Previous lookup**: poslední `workout_set` pro daný `exercise_id` daného usera z předchozího workoutu.
+- **PR tracking**: buď počítat on-the-fly z historie, nebo cache tabulka `personal_records` (exercise_id, type, value, achieved_at). 1RM odhad = váha × (1 + reps/30) (Epley).
+- Rest timer per-set (Sprint I `useRestTimer` máme — překlopit z globálního na per-set vizuál).
+
+**Pozn.:** Tohle je největší kus — přepracování `workouts/index.tsx` (Start Workout landing), `workouts/[id].tsx` (per-set tabulka), `workouts/templates/[id].tsx` (detail modal), `workouts/history/[id].tsx` (1RM + PR). Rozdělit na milestony, vlastní sprint (K). 16.10 (obrázky) je dobrý warm-up předtím — menší, samostatné, a thumbnaily se pak hodí v C.
