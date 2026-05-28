@@ -7,17 +7,17 @@ Aktuální stav projektu pro předání kontextu v nové konverzaci.
 
 ## 🔴 AKTUÁLNÍ STAV — 2026-05-28 (handoff pro pokračování na jiném agentu, např. GPT Codex)
 
-**Branch:** `001-workout-ux-polish`. Pracovní strom je **čistý** (vše commitnuto). **10 lokálních commitů NEpushnutých** na `origin`. Pokud nový agent běží na **stejném počítači** (stejný local checkout), commity tam jsou — push není nutný. Pokud běží v **jiném prostředí (cloud)**, je nutné nejdřív `git push` (push je sdílená akce → potvrdit s uživatelem).
+**Branch:** `001-workout-ux-polish`. Pracovní strom **čistý** (vše commitnuto). K 2026-05-28 ~10 lokálních commitů NEpushnutých na `origin` (ověř `git status`). Stejný počítač → push není nutný; cloud → nejdřív `git push` (sdílená akce, potvrdit s uživatelem).
 
-### ⚠️ NEDODĚLANÉ KROKY NA UŽIVATELI — DB migrace, které je TŘEBA aplikovat v Supabase SQL editoru
+### ⚠️ NEDODĚLANÉ KROKY NA UŽIVATELI — DB migrace k aplikaci v Supabase SQL editoru
 
-Aplikuj v tomto pořadí (každou zvlášť → Run). Idempotentní, bezpečné. Bez nich appka nebude fungovat správně:
+Aplikuj každou zvlášť → Run. Idempotentní. **Ověř `git log` / DEV_DIARY.md pro nejnovější stav — tento seznam může zastarat.** Stav k poslednímu vyčištění contextu (2026-05-28):
 
-1. **`supabase/migrations/20260528_fix_exercise_body_part.sql`** — opraví exercise filtr (Hrudník vracel 0 cviků). *(Uživatel řekl, že tuto UŽ aplikoval — ověřit dotazem `SELECT body_part, COUNT(*) FROM exercises GROUP BY body_part;`)*
-2. **`supabase/migrations/20260528_exercise_images.sql`** — přidá `exercises.image_url` sloupec. **Pravděpodobně JEŠTĚ NEaplikováno.**
-3. **Po #2: re-run seed skriptu** (v `gymtracker/`): `npx ts-node scripts/seed-exercises.ts` — doplní obrázky + opravené body_part k 873 cvikům. Vyžaduje `SUPABASE_SERVICE_ROLE_KEY` v `.env`. **Spouští uživatel** (agent nemá klíče). Bez tohoto budou v UI placeholdery s prvními písmeny (ne bug).
-
-Dříve aplikované migrace (hotové): `20260520_workout_templates_and_units.sql`, `20260522_cycle_visibility.sql`, `20260522_profile_grants.sql`.
+- ✅ HOTOVÉ (aplikované uživatelem): `20260520_workout_templates_and_units`, `20260522_cycle_visibility`, `20260522_profile_grants`, `20260528_fix_exercise_body_part`, `20260528_exercise_images` (+ seed re-run proběhl).
+- ⚠️ **ZKONTROLOVAT/APLIKOVAT** (přibyly na konci session, možná ještě neaplikované):
+  1. **`20260528_custom_exercises.sql`** — RLS + GRANT pro vytváření vlastních cviků. Bez ní „+ Vlastní cvik" hodí permission denied.
+  2. **`20260528_warmup_sets.sql`** — `workout_sets.is_warmup`. Bez ní přidání zahřívací série spadne.
+  Ověř existenci sloupců: `SELECT column_name FROM information_schema.columns WHERE table_name='workout_sets' AND column_name='is_warmup';`
 
 ### Co bylo uděláno v této sérii sessions (2026-05-27 → 28), vše commitnuto
 
@@ -28,13 +28,18 @@ Dříve aplikované migrace (hotové): `20260520_workout_templates_and_units.sql
 - **Safe area** — SafeAreaProvider + SafeAreaView edges=['top'] na všech top-level screens (překryv s Dynamic Island).
 - **Nested tabs fix** — `_layout.tsx` Stack do workouts/, nutrition/, progress/ (bottom bar měl 11 tabů, teď 5).
 - **VISIONS 16.9** — exercise body_part filtr fix (viz migrace #1). `src/lib/bodyParts.ts` je single source of truth (sdílí UI filtr, seed, migrace).
-- **VISIONS 16.10** — exercise obrázky (1. iterace): `ExerciseThumbnail` komponenta (RN Image + first-letter placeholder), thumbnaily v obou pickerech + detail modalu, seed doplňuje `image_url`. Čeká migrace #2 + re-run seedu.
+- **VISIONS 16.10** — exercise obrázky: `ExerciseThumbnail` (RN Image + first-letter placeholder), thumbnaily v pickerech + detail modalu. HOTOVO + ověřeno (seed re-run proběhl).
+- **VISIONS 16.12** — vytvoření vlastního cviku: `CreateExerciseModal` (název/partie/vybavení), `useExercises.createExercise`, „+ Vlastní cvik" v obou pickerech + „vlastní" badge. HOTOVO + ověřeno. (Modal vnořen DOVNITŘ picker-modalu kvůli iOS stacked-modal bugu — neopakovat chybu se sourozeneckými modaly.)
+- **VISIONS 16.11 — rozpracováno**, hotové milestony: (1) „Previous" reference + prefill v add-set (`fetchLastExercisePerformance`), (2) 1RM odhad v historii (`src/lib/oneRepMax.ts`, Epley), (3) PR odznaky 🏆 v historii (`fetchExercisePriorBests`, WEIGHT/REPS/1RM), (4) warmup série (`is_warmup`, oranžový „W", vyloučené ze všech stats).
 
-### CO JE DALŠÍ (next up) — VISIONS 16.11 Strong-style workout flow
+### CO JE DALŠÍ (next up) — dokončit VISIONS 16.11 (zbývají velké rewrity)
 
-Velký redesign workout flow podle Strong screenshotů. **Detailní spec je ve [VISIONS.md](VISIONS.md) sekce 16.11** — čti ji celou před začátkem. Shrnutí:
+**Detailní spec ve [VISIONS.md](VISIONS.md) sekce 16.11.** Zbývající (velké, dělat opatrně, ideálně po device testu):
 - **A)** Start Workout landing (Quick Start „prázdný trénink" + karty šablon s preview).
-- **B)** Aktivní trénink = per-exercise tabulka (Set/Previous/kg/Reps/✓, warmup `W`, inline zadávání, rest timer mezi sériemi po odškrtnutí, +Přidat sérii).
+- **B)** Aktivní trénink = per-exercise tabulka (Set/Previous/kg/Reps/✓, inline zadávání, rest timer mezi sériemi po odškrtnutí, +Přidat sérii) — VELKÝ rewrite `workouts/[id].tsx`. Pozn.: Previous + warmup už máme, jen jiný vizuál (per-set řádky místo modalu).
+- **C)** Detail šablony modal (thumbnaily, počet sérií, „Začít trénink" → `startFromTemplate` existuje).
+Ostatní vize: 16.1 (drawer nav), 16.3 (dietní presety), 16.4 (per-type training freq).
+Bonus: PR „VOL" odznak (session volume) zatím vynechán — doplnit při per-set tabulce.
 - **C)** Detail šablony modal (thumbnaily, počet sérií, partie, „Začít trénink" → `startFromTemplate` už existuje).
 - **D)** Historie s 1RM sloupcem (Epley) + PR odznaky (REPS/1RM/VOL/WEIGHT).
 - **Datově:** `workout_sets` přidat `is_warmup boolean`; Previous lookup (poslední set daného exercise_id usera); PR tracking (on-the-fly nebo `personal_records` tabulka).
