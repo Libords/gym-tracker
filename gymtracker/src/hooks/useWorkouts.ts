@@ -88,6 +88,46 @@ export function useExercises() {
   return { exercises, createExercise, refetch: fetchExercises }
 }
 
+export type LastPerformance = {
+  date: string
+  sets: { reps: number | null; weight_kg: number | null; set_number: number }[]
+}
+
+// Most recent prior (finished) workout's sets for a given exercise — Strong's "Previous".
+export async function fetchLastExercisePerformance(
+  userId: string,
+  exerciseId: string,
+  excludeWorkoutId: string,
+): Promise<LastPerformance | null> {
+  const { data } = await supabase
+    .from('workout_sets')
+    .select('reps, weight_kg, set_number, workouts!inner(id, started_at, finished_at, user_id)')
+    .eq('exercise_id', exerciseId)
+    .eq('workouts.user_id', userId)
+    .not('workouts.finished_at', 'is', null)
+    .neq('workout_id', excludeWorkoutId)
+  if (!data || data.length === 0) return null
+
+  // Pick the rows belonging to the most recently started workout
+  let latestId: string | null = null
+  let latestStarted = ''
+  for (const row of data as any[]) {
+    const w = row.workouts
+    if (w && w.started_at > latestStarted) {
+      latestStarted = w.started_at
+      latestId = w.id
+    }
+  }
+  if (!latestId) return null
+
+  const sets = (data as any[])
+    .filter(r => r.workouts?.id === latestId)
+    .map(r => ({ reps: r.reps, weight_kg: r.weight_kg, set_number: r.set_number }))
+    .sort((a, b) => a.set_number - b.set_number)
+
+  return { date: latestStarted, sets }
+}
+
 export function useWorkoutSets(workoutId: string) {
   const [sets, setSets] = useState<WorkoutSet[]>([])
   const [loading, setLoading] = useState(true)

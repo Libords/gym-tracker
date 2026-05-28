@@ -1,10 +1,11 @@
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
   TextInput, Modal, Alert, ActivityIndicator, ScrollView, Linking,
 } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { useWorkoutSets, useExercises, useWorkouts } from '../../../src/hooks/useWorkouts'
+import { useWorkoutSets, useExercises, useWorkouts, fetchLastExercisePerformance } from '../../../src/hooks/useWorkouts'
+import type { LastPerformance } from '../../../src/hooks/useWorkouts'
 import { useRestTimer } from '../../../src/hooks/useRestTimer'
 import { useProfile } from '../../../src/hooks/useProfile'
 import { useExerciseFilters } from '../../../src/hooks/useExerciseFilters'
@@ -33,6 +34,7 @@ export default function WorkoutDetailScreen() {
   const [reps, setReps] = useState('')
   const [weight, setWeight] = useState('')
   const [saving, setSaving] = useState(false)
+  const [lastPerf, setLastPerf] = useState<LastPerformance | null>(null)
   const {
     filters, setBodyPart, setSearch, toggleEquipmentChip, applyFilters,
   } = useExerciseFilters()
@@ -43,6 +45,24 @@ export default function WorkoutDetailScreen() {
     () => applyFilters(exercises),
     [exercises, applyFilters],
   )
+
+  // "Previous" — load last session's performance for the selected exercise and prefill inputs
+  useEffect(() => {
+    if (!selectedExercise || !workout) { setLastPerf(null); return }
+    let active = true
+    fetchLastExercisePerformance(workout.user_id, selectedExercise.id, workout.id).then(perf => {
+      if (!active) return
+      setLastPerf(perf)
+      if (perf && perf.sets.length > 0) {
+        const doneCount = sets.filter(s => s.exercise_id === selectedExercise.id).length
+        const ref = perf.sets[doneCount] ?? perf.sets[perf.sets.length - 1]
+        if (ref?.weight_kg != null) setWeight(String(ref.weight_kg))
+        if (ref?.reps != null) setReps(String(ref.reps))
+      }
+    })
+    return () => { active = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedExercise, workout?.id])
 
   const handleAddSet = async () => {
     if (!selectedExercise) return
@@ -227,6 +247,16 @@ export default function WorkoutDetailScreen() {
                 {selectedExercise.target && (
                   <Text style={styles.exerciseMeta}>Cíl: {selectedExercise.target}  •  {selectedExercise.equipment}</Text>
                 )}
+                {lastPerf && lastPerf.sets.length > 0 && (
+                  <View style={styles.prevCard}>
+                    <Text style={styles.prevTitle}>
+                      Naposledy ({new Date(lastPerf.date).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric' })})
+                    </Text>
+                    <Text style={styles.prevSets}>
+                      {lastPerf.sets.map(s => `${s.weight_kg ?? '–'}×${s.reps ?? '–'}`).join('   ')}
+                    </Text>
+                  </View>
+                )}
                 <TextInput style={[styles.input, { marginTop: 12 }]} placeholder="Opakování" value={reps} onChangeText={setReps} keyboardType="numeric" />
                 <TextInput style={styles.input} placeholder="Váha (kg)" value={weight} onChangeText={setWeight} keyboardType="decimal-pad" />
                 <TouchableOpacity style={styles.backLink} onPress={() => setSelectedExercise(null)}>
@@ -314,6 +344,9 @@ const styles = StyleSheet.create({
   filterChipActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
   filterChipText: { fontSize: 13, color: '#555' },
   filterChipTextActive: { color: '#fff' },
+  prevCard: { backgroundColor: '#f8fafc', borderRadius: 10, padding: 10, marginTop: 10, borderLeftWidth: 3, borderLeftColor: '#2563eb' },
+  prevTitle: { fontSize: 11, color: '#64748b', fontWeight: '600', marginBottom: 3 },
+  prevSets: { fontSize: 14, color: '#1e293b', fontWeight: '600' },
   resultRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   resultCount: { color: '#999', fontSize: 12 },
   createLink: { color: '#2563eb', fontSize: 13, fontWeight: '700' },
