@@ -7,7 +7,11 @@ import { supabase } from '../../../../src/lib/supabase'
 import { useUnitPreference } from '../../../../src/hooks/useUnitPreference'
 import { formatWeight } from '../../../../src/lib/units'
 import { estimate1RM } from '../../../../src/lib/oneRepMax'
+import { fetchExercisePriorBests } from '../../../../src/hooks/useWorkouts'
+import type { ExerciseBests } from '../../../../src/hooks/useWorkouts'
 import type { Exercise, Workout, WorkoutSet } from '../../../../src/types/workout'
+
+const PR_LABELS: Record<string, string> = { WEIGHT: 'Váha', REPS: 'Opak.', '1RM': '1RM' }
 
 type SetWithExercise = WorkoutSet & { exercise?: Exercise }
 
@@ -57,6 +61,7 @@ export default function HistoryDetailScreen() {
   const { unit } = useUnitPreference()
   const [workout, setWorkout] = useState<Workout | null>(null)
   const [sets, setSets] = useState<SetWithExercise[]>([])
+  const [priorBests, setPriorBests] = useState<Record<string, ExerciseBests>>({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -71,14 +76,42 @@ export default function HistoryDetailScreen() {
           .order('set_number'),
       ])
       if (cancelled) return
-      setWorkout(w as Workout | null)
-      setSets((s as SetWithExercise[] | null) ?? [])
+      const workoutRow = w as Workout | null
+      const setRows = (s as SetWithExercise[] | null) ?? []
+      setWorkout(workoutRow)
+      setSets(setRows)
       setLoading(false)
+
+      // PR detection: all-time bests for these exercises before this workout
+      if (workoutRow) {
+        const exerciseIds = [...new Set(setRows.map(r => r.exercise_id))]
+        const bests = await fetchExercisePriorBests(workoutRow.user_id, exerciseIds, workoutRow.started_at)
+        if (!cancelled) setPriorBests(bests)
+      }
     })()
     return () => { cancelled = true }
   }, [id])
 
   const groups = useMemo(() => groupByExercise(sets), [sets])
+
+  // Per-set PR flags — a set is a PR if it beats the all-time prior best and
+  // any earlier set in this same session (running best).
+  const prFlags = useMemo(() => {
+    const flags = new Map<string, string[]>()
+    for (const g of groups) {
+      const prior = priorBests[g.exercise_id] ?? { maxWeight: 0, maxReps: 0, max1RM: 0 }
+      let runW = prior.maxWeight, runR = prior.maxReps, run1 = prior.max1RM
+      for (const s of g.sets) {
+        const tags: string[] = []
+        if (s.weight_kg != null && s.weight_kg > runW) { tags.push('WEIGHT'); runW = s.weight_kg }
+        if (s.reps != null && s.reps > runR) { tags.push('REPS'); runR = s.reps }
+        const orm = estimate1RM(s.weight_kg, s.reps)
+        if (orm != null && orm > run1) { tags.push('1RM'); run1 = orm }
+        if (tags.length) flags.set(s.id, tags)
+      }
+    }
+    return flags
+  }, [groups, priorBests])
   const stats = useMemo(() => {
     let total = 0
     for (const s of sets) {
@@ -131,6 +164,7 @@ export default function HistoryDetailScreen() {
             </View>
             {g.sets.map((s, idx) => {
               const oneRm = estimate1RM(s.weight_kg, s.reps)
+              const prs = prFlags.get(s.id)
               return (
                 <View key={s.id} style={styles.setRow}>
                   <Text style={styles.setNumber}>{idx + 1}.</Text>
@@ -138,6 +172,9 @@ export default function HistoryDetailScreen() {
                     {s.reps != null ? `${s.reps} opak.` : '—'}
                     {s.weight_kg != null ? `  •  ${formatWeight(s.weight_kg, unit)}` : ''}
                   </Text>
+                  {prs?.map(pr => (
+                    <Text key={pr} style={styles.prBadge}>🏆 {PR_LABELS[pr]}</Text>
+                  ))}
                   {oneRm != null && (
                     <Text style={styles.set1rm}>1RM {formatWeight(oneRm, unit)}</Text>
                   )}
@@ -180,4 +217,5 @@ const styles = StyleSheet.create({
   setNumber: { color: '#888', fontSize: 14, width: 24 },
   setText: { color: '#1a1a1a', fontSize: 14, flex: 1 },
   set1rm: { color: '#64748b', fontSize: 12, fontWeight: '600' },
+  prBadge: { color: '#b45309', backgroundColor: '#fef3c7', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1, fontSize: 10, fontWeight: '700', overflow: 'hidden' },
 })

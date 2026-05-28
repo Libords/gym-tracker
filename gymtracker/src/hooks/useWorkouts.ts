@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { estimate1RM } from '../lib/oneRepMax'
 import type { Workout, Exercise, WorkoutSet } from '../types/workout'
 
 export function useWorkouts() {
@@ -126,6 +127,37 @@ export async function fetchLastExercisePerformance(
     .sort((a, b) => a.set_number - b.set_number)
 
   return { date: latestStarted, sets }
+}
+
+export type ExerciseBests = { maxWeight: number; maxReps: number; max1RM: number }
+
+// All-time bests per exercise from finished workouts started BEFORE a given date.
+// Used to detect new personal records (PRs) in a workout being viewed.
+export async function fetchExercisePriorBests(
+  userId: string,
+  exerciseIds: string[],
+  beforeStartedAt: string,
+): Promise<Record<string, ExerciseBests>> {
+  if (exerciseIds.length === 0) return {}
+  const { data } = await supabase
+    .from('workout_sets')
+    .select('exercise_id, reps, weight_kg, workouts!inner(started_at, finished_at, user_id)')
+    .in('exercise_id', exerciseIds)
+    .eq('workouts.user_id', userId)
+    .not('workouts.finished_at', 'is', null)
+    .lt('workouts.started_at', beforeStartedAt)
+
+  const result: Record<string, ExerciseBests> = {}
+  for (const row of (data as any[]) ?? []) {
+    const id = row.exercise_id as string
+    const b = result[id] ?? { maxWeight: 0, maxReps: 0, max1RM: 0 }
+    if (row.weight_kg != null) b.maxWeight = Math.max(b.maxWeight, row.weight_kg)
+    if (row.reps != null) b.maxReps = Math.max(b.maxReps, row.reps)
+    const orm = estimate1RM(row.weight_kg, row.reps)
+    if (orm != null) b.max1RM = Math.max(b.max1RM, orm)
+    result[id] = b
+  }
+  return result
 }
 
 export function useWorkoutSets(workoutId: string) {
