@@ -415,3 +415,25 @@ Tyto úvahy vznikly při prvním procházení appky v Expo Go po dokončení Spr
 - Rest timer per-set (Sprint I `useRestTimer` máme — překlopit z globálního na per-set vizuál).
 
 **Pozn.:** Tohle je největší kus — přepracování `workouts/index.tsx` (Start Workout landing), `workouts/[id].tsx` (per-set tabulka), `workouts/templates/[id].tsx` (detail modal), `workouts/history/[id].tsx` (1RM + PR). Rozdělit na milestony, vlastní sprint (K). 16.10 (obrázky) je dobrý warm-up předtím — menší, samostatné, a thumbnaily se pak hodí v C.
+
+### 16.12 🔜 Vytvoření vlastního cviku (custom exercise)
+
+**Stav:** vize, neimplementováno. Požadavek od Libora 2026-05-28. Reference: Strong „Create Exercise".
+
+**Problém:** Uživatel teď může jen vybírat z 873 importovaných cviků. Nejde vytvořit vlastní cvik od nuly (např. vlastní variace, stroj specifický pro jeho posilovnu).
+
+**Idea (jako Strong):** V exercise pickeru tlačítko „+ Vytvořit cvik" → formulář:
+- **Název** (text, povinné)
+- **Svalová partie** (výběr z `BODY_PARTS` — viz `src/lib/bodyParts.ts`, CS labely Hrudník/Záda/…)
+- **Kategorie / vybavení** (výběr z equipment chipů — viz `src/types/workout.ts` `EquipmentChip`: barbell/dumbbell/cable/machine/bodyweight/kettlebell/bands/other)
+- (volitelně) cílový sval, instrukce, obrázek z galerie (expo-image-picker už je v deps)
+
+**Datově — DB je připravená:** tabulka `exercises` má `is_custom boolean` a `created_by uuid` (FK na usera). Stačí INSERT s `is_custom=true, created_by=auth.uid()`. **POZOR:** ověřit RLS policies na `exercises` — momentálně je `GRANT SELECT` pro authenticated (read-only, viz migrace 20260522_profile_grants). Pro custom cviky bude potřeba **přidat INSERT policy + GRANT INSERT** (`auth.uid() = created_by`), případně UPDATE/DELETE jen pro vlastní custom cviky. To vyžaduje novou migraci (schválení uživatele).
+
+**UI plán:**
+- `workouts/[id].tsx` + `workouts/templates/[id].tsx` picker: tlačítko „+ Vytvořit vlastní cvik" nad/pod seznamem.
+- Nový formulářový modal (sdílená komponenta, ať se needuplikuje mezi oběma pickery — např. `src/components/workouts/CreateExerciseModal.tsx`).
+- Po vytvoření: refetch `useExercises()` (aktuálně fetchuje 1× na mount — přidat `refetch`), nový cvik rovnou vybrán.
+- Custom cviky odlišit v seznamu (badge „vlastní" nebo ikona).
+
+**Pozn.:** Bounded featura, menší než 16.11. Dá se udělat samostatně. Mapování equipment chip → DB `equipment` hodnota: viz `src/lib/equipmentMapping.ts` (reverzní mapování chip → kanonická hodnota možná bude potřeba doplnit).

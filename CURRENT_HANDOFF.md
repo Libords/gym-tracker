@@ -40,7 +40,11 @@ Velký redesign workout flow podle Strong screenshotů. **Detailní spec je ve [
 - **Datově:** `workout_sets` přidat `is_warmup boolean`; Previous lookup (poslední set daného exercise_id usera); PR tracking (on-the-fly nebo `personal_records` tabulka).
 - Doporučeno: vlastní sprint (K), `/speckit.specify`, rozdělit na milestony.
 
+**Také čerstvě požadováno (2026-05-28): VISIONS 16.12 — vytvoření vlastního cviku** (custom exercise jako ve Strongu: název + partie + vybavení). DB je připravená (`exercises.is_custom`, `created_by`), ale potřebuje novou migraci s INSERT policy + GRANT INSERT na `exercises` (teď read-only). Bounded featura, menší než 16.11 — dobrý kandidát začít jako první. Detaily ve VISIONS 16.12.
+
 Ostatní otevřené VISIONS: 16.1 (drawer nav redesign, spec hotová), 16.3 (dietní presety lowcarb/keto), 16.4 (per-type training frequency).
+
+**Stav 16.9 + 16.10 (2026-05-28):** HOTOVO a ověřeno na device — filtr partií funguje, obrázky cviků se zobrazují. Seed byl re-runnut (873 cviků s image_url + opravené body_part). Migrace `20260528_exercise_images.sql` a `20260528_fix_exercise_body_part.sql` jsou aplikované.
 
 ### Závazná pravidla pro pokračování (NEPORUŠOVAT)
 
