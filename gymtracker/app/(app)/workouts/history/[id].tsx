@@ -28,14 +28,16 @@ function groupByExercise(sets: SetWithExercise[]): ExerciseGroup[] {
   const map = new Map<string, ExerciseGroup>()
   for (const s of sets) {
     const name = s.exercise?.name ?? '?'
-    const oneRm = estimate1RM(s.weight_kg, s.reps)
+    // Warmup sets are listed but excluded from stats (volume / max / 1RM)
+    const counts = !s.is_warmup
+    const oneRm = counts ? estimate1RM(s.weight_kg, s.reps) : null
     const existing = map.get(s.exercise_id)
     if (existing) {
       existing.sets.push(s)
-      if (s.weight_kg != null) {
+      if (counts && s.weight_kg != null) {
         existing.max_weight_kg = Math.max(existing.max_weight_kg ?? 0, s.weight_kg)
       }
-      if (s.reps != null && s.weight_kg != null) {
+      if (counts && s.reps != null && s.weight_kg != null) {
         existing.total_volume_kg += s.reps * s.weight_kg
       }
       if (oneRm != null) {
@@ -46,8 +48,8 @@ function groupByExercise(sets: SetWithExercise[]): ExerciseGroup[] {
         exercise_id: s.exercise_id,
         exercise_name: name,
         sets: [s],
-        max_weight_kg: s.weight_kg ?? null,
-        total_volume_kg: (s.reps != null && s.weight_kg != null) ? s.reps * s.weight_kg : 0,
+        max_weight_kg: counts ? (s.weight_kg ?? null) : null,
+        total_volume_kg: (counts && s.reps != null && s.weight_kg != null) ? s.reps * s.weight_kg : 0,
         best_1rm: oneRm,
       })
     }
@@ -102,6 +104,7 @@ export default function HistoryDetailScreen() {
       const prior = priorBests[g.exercise_id] ?? { maxWeight: 0, maxReps: 0, max1RM: 0 }
       let runW = prior.maxWeight, runR = prior.maxReps, run1 = prior.max1RM
       for (const s of g.sets) {
+        if (s.is_warmup) continue
         const tags: string[] = []
         if (s.weight_kg != null && s.weight_kg > runW) { tags.push('WEIGHT'); runW = s.weight_kg }
         if (s.reps != null && s.reps > runR) { tags.push('REPS'); runR = s.reps }
@@ -115,7 +118,7 @@ export default function HistoryDetailScreen() {
   const stats = useMemo(() => {
     let total = 0
     for (const s of sets) {
-      if (s.reps != null && s.weight_kg != null) total += s.reps * s.weight_kg
+      if (!s.is_warmup && s.reps != null && s.weight_kg != null) total += s.reps * s.weight_kg
     }
     const duration = workout?.finished_at
       ? Math.round((new Date(workout.finished_at).getTime() - new Date(workout.started_at).getTime()) / 60000)
@@ -163,11 +166,11 @@ export default function HistoryDetailScreen() {
               </Text>
             </View>
             {g.sets.map((s, idx) => {
-              const oneRm = estimate1RM(s.weight_kg, s.reps)
+              const oneRm = s.is_warmup ? null : estimate1RM(s.weight_kg, s.reps)
               const prs = prFlags.get(s.id)
               return (
                 <View key={s.id} style={styles.setRow}>
-                  <Text style={styles.setNumber}>{idx + 1}.</Text>
+                  <Text style={styles.setNumber}>{s.is_warmup ? 'W' : `${idx + 1}.`}</Text>
                   <Text style={styles.setText}>
                     {s.reps != null ? `${s.reps} opak.` : '—'}
                     {s.weight_kg != null ? `  •  ${formatWeight(s.weight_kg, unit)}` : ''}

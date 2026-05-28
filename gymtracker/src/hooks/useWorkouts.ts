@@ -105,6 +105,7 @@ export async function fetchLastExercisePerformance(
     .select('reps, weight_kg, set_number, workouts!inner(id, started_at, finished_at, user_id)')
     .eq('exercise_id', exerciseId)
     .eq('workouts.user_id', userId)
+    .eq('is_warmup', false)
     .not('workouts.finished_at', 'is', null)
     .neq('workout_id', excludeWorkoutId)
   if (!data || data.length === 0) return null
@@ -144,6 +145,7 @@ export async function fetchExercisePriorBests(
     .select('exercise_id, reps, weight_kg, workouts!inner(started_at, finished_at, user_id)')
     .in('exercise_id', exerciseIds)
     .eq('workouts.user_id', userId)
+    .eq('is_warmup', false)
     .not('workouts.finished_at', 'is', null)
     .lt('workouts.started_at', beforeStartedAt)
 

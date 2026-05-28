@@ -21,6 +21,7 @@ export type WorkoutSet = {
   reps: number | null
   weight_kg: number | null
   rest_seconds: number | null
+  is_warmup: boolean
   exercise?: Exercise
 }
 

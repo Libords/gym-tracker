@@ -33,6 +33,7 @@ export default function WorkoutDetailScreen() {
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null)
   const [reps, setReps] = useState('')
   const [weight, setWeight] = useState('')
+  const [isWarmup, setIsWarmup] = useState(false)
   const [saving, setSaving] = useState(false)
   const [lastPerf, setLastPerf] = useState<LastPerformance | null>(null)
   const {
@@ -54,7 +55,7 @@ export default function WorkoutDetailScreen() {
       if (!active) return
       setLastPerf(perf)
       if (perf && perf.sets.length > 0) {
-        const doneCount = sets.filter(s => s.exercise_id === selectedExercise.id).length
+        const doneCount = sets.filter(s => s.exercise_id === selectedExercise.id && !s.is_warmup).length
         const ref = perf.sets[doneCount] ?? perf.sets[perf.sets.length - 1]
         if (ref?.weight_kg != null) setWeight(String(ref.weight_kg))
         if (ref?.reps != null) setReps(String(ref.reps))
@@ -73,6 +74,7 @@ export default function WorkoutDetailScreen() {
       reps: reps ? parseInt(reps) : null,
       weight_kg: weight ? parseFloat(weight) : null,
       rest_seconds: null,
+      is_warmup: isWarmup,
       exercise: selectedExercise,
     })
     setSaving(false)
@@ -80,6 +82,7 @@ export default function WorkoutDetailScreen() {
     setSelectedExercise(null)
     setReps('')
     setWeight('')
+    setIsWarmup(false)
     // Start rest timer
     const restSec = profile?.default_rest_seconds ?? 90
     await restTimer.start(id, restSec)
@@ -114,6 +117,7 @@ export default function WorkoutDetailScreen() {
     setBodyPart('Vše')
     setReps('')
     setWeight('')
+    setIsWarmup(false)
   }
 
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" /></View>
@@ -148,7 +152,10 @@ export default function WorkoutDetailScreen() {
         renderItem={({ item }) => (
           <View style={styles.setRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.exerciseName}>{item.exercise?.name}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.exerciseName}>{item.exercise?.name}</Text>
+                {item.is_warmup && <Text style={styles.warmupBadge}>W</Text>}
+              </View>
               <Text style={styles.setMeta}>
                 {item.reps != null ? `${item.reps} opak.` : '—'}
                 {item.weight_kg != null ? `  •  ${item.weight_kg} kg` : ''}
@@ -259,6 +266,12 @@ export default function WorkoutDetailScreen() {
                 )}
                 <TextInput style={[styles.input, { marginTop: 12 }]} placeholder="Opakování" value={reps} onChangeText={setReps} keyboardType="numeric" />
                 <TextInput style={styles.input} placeholder="Váha (kg)" value={weight} onChangeText={setWeight} keyboardType="decimal-pad" />
+                <TouchableOpacity style={styles.warmupToggle} onPress={() => setIsWarmup(w => !w)}>
+                  <View style={[styles.checkbox, isWarmup && styles.checkboxOn]}>
+                    {isWarmup && <Text style={styles.checkboxMark}>✓</Text>}
+                  </View>
+                  <Text style={styles.warmupLabel}>Zahřívací série (nepočítá se do objemu)</Text>
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.backLink} onPress={() => setSelectedExercise(null)}>
                   <Text style={styles.backLinkText}>← Změnit cvik</Text>
                 </TouchableOpacity>
@@ -344,6 +357,12 @@ const styles = StyleSheet.create({
   filterChipActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
   filterChipText: { fontSize: 13, color: '#555' },
   filterChipTextActive: { color: '#fff' },
+  warmupToggle: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
+  checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: '#cbd5e1', alignItems: 'center', justifyContent: 'center' },
+  checkboxOn: { backgroundColor: '#f59e0b', borderColor: '#f59e0b' },
+  checkboxMark: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  warmupLabel: { fontSize: 13, color: '#555', flex: 1 },
+  warmupBadge: { fontSize: 10, color: '#b45309', backgroundColor: '#fef3c7', borderRadius: 5, paddingHorizontal: 5, paddingVertical: 1, fontWeight: '700', overflow: 'hidden' },
   prevCard: { backgroundColor: '#f8fafc', borderRadius: 10, padding: 10, marginTop: 10, borderLeftWidth: 3, borderLeftColor: '#2563eb' },
   prevTitle: { fontSize: 11, color: '#64748b', fontWeight: '600', marginBottom: 3 },
   prevSets: { fontSize: 14, color: '#1e293b', fontWeight: '600' },
