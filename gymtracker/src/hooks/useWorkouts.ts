@@ -47,13 +47,45 @@ export function useWorkouts() {
 }
 
 export function useExercises() {
+  const { user } = useAuth()
   const [exercises, setExercises] = useState<Exercise[]>([])
 
-  useEffect(() => {
-    supabase.from('exercises').select('*').order('name').then(({ data }) => setExercises(data ?? []))
+  const fetchExercises = useCallback(async () => {
+    const { data } = await supabase.from('exercises').select('*').order('name')
+    setExercises(data ?? [])
   }, [])
 
-  return { exercises }
+  useEffect(() => { fetchExercises() }, [fetchExercises])
+
+  const createExercise = async (input: {
+    name: string
+    body_part: string
+    equipment: string
+    target?: string | null
+  }): Promise<{ exercise: Exercise | null; error: Error | null }> => {
+    if (!user) return { exercise: null, error: new Error('Nepřihlášen') }
+    const { data, error } = await supabase
+      .from('exercises')
+      .insert({
+        name: input.name.trim(),
+        body_part: input.body_part,
+        equipment: input.equipment,
+        muscle_group: input.target ?? null,
+        target: input.target ?? null,
+        is_custom: true,
+        created_by: user.id,
+      })
+      .select()
+      .single()
+    if (error) {
+      console.error('[useExercises] createExercise error:', error)
+      return { exercise: null, error }
+    }
+    if (data) setExercises(prev => [...prev, data as Exercise].sort((a, b) => a.name.localeCompare(b.name)))
+    return { exercise: (data as Exercise) ?? null, error: null }
+  }
+
+  return { exercises, createExercise, refetch: fetchExercises }
 }
 
 export function useWorkoutSets(workoutId: string) {

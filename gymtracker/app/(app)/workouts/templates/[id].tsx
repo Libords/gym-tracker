@@ -6,6 +6,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useWorkoutTemplates } from '../../../../src/hooks/useWorkoutTemplates'
 import { useExercises } from '../../../../src/hooks/useWorkouts'
+import { CreateExerciseModal } from '../../../../src/components/workouts/CreateExerciseModal'
 import { useExerciseFilters } from '../../../../src/hooks/useExerciseFilters'
 import { TemplateExerciseRow } from '../../../../src/components/workouts/TemplateExerciseRow'
 import { EquipmentChips } from '../../../../src/components/workouts/EquipmentChips'
@@ -22,11 +23,12 @@ export default function TemplateEditorScreen() {
     addExerciseToTemplate, updateTemplateExercise,
     removeTemplateExercise, reorderTemplateExercises,
   } = useWorkoutTemplates()
-  const { exercises } = useExercises()
+  const { exercises, createExercise } = useExercises()
 
   const template = templates.find(t => t.id === id)
   const [name, setName] = useState('')
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [createModalVisible, setCreateModalVisible] = useState(false)
   const {
     filters, setBodyPart, setSearch, toggleEquipmentChip, applyFilters, reset: resetFilters,
   } = useExerciseFilters()
@@ -168,13 +170,21 @@ export default function TemplateEditorScreen() {
               selected={filters.equipmentChips}
               onToggle={toggleEquipmentChip}
             />
-            <Text style={styles.resultCount}>{filteredExercises.length} cviků</Text>
+            <View style={styles.resultRow}>
+              <Text style={styles.resultCount}>{filteredExercises.length} cviků</Text>
+              <TouchableOpacity onPress={() => setCreateModalVisible(true)}>
+                <Text style={styles.createLink}>+ Vlastní cvik</Text>
+              </TouchableOpacity>
+            </View>
             <ScrollView style={{ maxHeight: 320 }}>
               {filteredExercises.map(e => (
                 <TouchableOpacity key={e.id} style={styles.exerciseItem} onPress={() => handleAddExercise(e)}>
                   <ExerciseThumbnail uri={e.image_url} name={e.name} />
                   <View style={{ flex: 1, marginLeft: 10 }}>
-                    <Text style={styles.exerciseItemText}>{e.name}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={styles.exerciseItemText}>{e.name}</Text>
+                      {e.is_custom && <Text style={styles.customBadge}>vlastní</Text>}
+                    </View>
                     {(e.target || e.equipment) && (
                       <Text style={styles.exerciseMeta}>
                         {e.target}{e.target && e.equipment ? '  •  ' : ''}{e.equipment}
@@ -190,6 +200,14 @@ export default function TemplateEditorScreen() {
           </View>
         </View>
       </Modal>
+
+      <CreateExerciseModal
+        visible={createModalVisible}
+        initialName={search}
+        onClose={() => setCreateModalVisible(false)}
+        onSubmit={createExercise}
+        onCreated={(ex) => handleAddExercise(ex)}
+      />
     </View>
   )
 }
@@ -214,7 +232,10 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
   chipText: { fontSize: 13, color: '#555' },
   chipTextActive: { color: '#fff' },
-  resultCount: { color: '#999', fontSize: 12, marginBottom: 6 },
+  resultRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  resultCount: { color: '#999', fontSize: 12 },
+  createLink: { color: '#2563eb', fontSize: 13, fontWeight: '700' },
+  customBadge: { fontSize: 10, color: '#2563eb', backgroundColor: '#eff6ff', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1, overflow: 'hidden', fontWeight: '700' },
   exerciseItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 11, borderBottomWidth: 1, borderColor: '#f0f0f0' },
   exerciseItemText: { fontSize: 15, fontWeight: '500' },
   exerciseMeta: { color: '#888', fontSize: 12, marginTop: 1 },

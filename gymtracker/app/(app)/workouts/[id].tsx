@@ -11,6 +11,7 @@ import { useExerciseFilters } from '../../../src/hooks/useExerciseFilters'
 import { RestTimer } from '../../../src/components/workouts/RestTimer'
 import { EquipmentChips } from '../../../src/components/workouts/EquipmentChips'
 import { ExerciseThumbnail } from '../../../src/components/workouts/ExerciseThumbnail'
+import { CreateExerciseModal } from '../../../src/components/workouts/CreateExerciseModal'
 import { BODY_PARTS, BODY_PART_LABELS } from '../../../src/lib/bodyParts'
 import type { Exercise } from '../../../src/types/workout'
 
@@ -18,7 +19,8 @@ export default function WorkoutDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
   const { sets, loading, addSet, removeSet } = useWorkoutSets(id)
-  const { exercises } = useExercises()
+  const { exercises, createExercise } = useExercises()
+  const [createModalVisible, setCreateModalVisible] = useState(false)
   const { workouts, finishWorkout } = useWorkouts()
   const { profile } = useProfile()
   const restTimer = useRestTimer()
@@ -185,14 +187,22 @@ export default function WorkoutDetailScreen() {
                   onToggle={toggleEquipmentChip}
                 />
 
-                <Text style={styles.resultCount}>{filteredExercises.length} cviků</Text>
+                <View style={styles.resultRow}>
+                  <Text style={styles.resultCount}>{filteredExercises.length} cviků</Text>
+                  <TouchableOpacity onPress={() => setCreateModalVisible(true)}>
+                    <Text style={styles.createLink}>+ Vlastní cvik</Text>
+                  </TouchableOpacity>
+                </View>
 
                 <ScrollView style={{ maxHeight: 300 }}>
                   {filteredExercises.map(e => (
                     <TouchableOpacity key={e.id} style={styles.exerciseItem} onPress={() => setSelectedExercise(e)}>
                       <ExerciseThumbnail uri={e.image_url} name={e.name} />
                       <View style={{ flex: 1, marginLeft: 10 }}>
-                        <Text style={styles.exerciseItemText}>{e.name}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <Text style={styles.exerciseItemText}>{e.name}</Text>
+                          {e.is_custom && <Text style={styles.customBadge}>vlastní</Text>}
+                        </View>
                         {(e.target || e.equipment) && (
                           <Text style={styles.exerciseMeta}>
                             {e.target}{e.target && e.equipment ? '  •  ' : ''}{e.equipment}
@@ -267,6 +277,14 @@ export default function WorkoutDetailScreen() {
           </View>
         </View>
       </Modal>
+
+      <CreateExerciseModal
+        visible={createModalVisible}
+        initialName={search}
+        onClose={() => setCreateModalVisible(false)}
+        onSubmit={createExercise}
+        onCreated={(ex) => setSelectedExercise(ex)}
+      />
     </View>
   )
 }
@@ -295,7 +313,10 @@ const styles = StyleSheet.create({
   filterChipActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
   filterChipText: { fontSize: 13, color: '#555' },
   filterChipTextActive: { color: '#fff' },
-  resultCount: { color: '#999', fontSize: 12, marginBottom: 6 },
+  resultRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  resultCount: { color: '#999', fontSize: 12 },
+  createLink: { color: '#2563eb', fontSize: 13, fontWeight: '700' },
+  customBadge: { fontSize: 10, color: '#2563eb', backgroundColor: '#eff6ff', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1, overflow: 'hidden', fontWeight: '700' },
   exerciseItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 11, borderBottomWidth: 1, borderColor: '#f0f0f0' },
   exerciseItemText: { fontSize: 15, fontWeight: '500' },
   exerciseMeta: { color: '#888', fontSize: 12, marginTop: 1 },
