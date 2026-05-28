@@ -5,6 +5,9 @@
  * Vyžaduje SUPABASE_SERVICE_ROLE_KEY v .env (nikdy do gitu!)
  */
 
+// Load .env into process.env — Expo does this for the app, but a plain
+// ts-node script does not, so we load it explicitly here.
+import 'dotenv/config'
 import { createClient } from '@supabase/supabase-js'
 import * as https from 'https'
 import { muscleToBodyPart } from '../src/lib/bodyParts'
