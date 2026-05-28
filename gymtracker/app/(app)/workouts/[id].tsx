@@ -10,14 +10,8 @@ import { useProfile } from '../../../src/hooks/useProfile'
 import { useExerciseFilters } from '../../../src/hooks/useExerciseFilters'
 import { RestTimer } from '../../../src/components/workouts/RestTimer'
 import { EquipmentChips } from '../../../src/components/workouts/EquipmentChips'
+import { BODY_PARTS, BODY_PART_LABELS } from '../../../src/lib/bodyParts'
 import type { Exercise } from '../../../src/types/workout'
-
-const BODY_PARTS = ['Vše', 'chest', 'back', 'upper legs', 'lower legs', 'upper arms', 'lower arms', 'shoulders', 'waist', 'cardio']
-const BODY_PART_LABELS: Record<string, string> = {
-  'Vše': 'Vše', 'chest': 'Hrudník', 'back': 'Záda',
-  'upper legs': 'Stehna', 'lower legs': 'Lýtka', 'upper arms': 'Paže',
-  'lower arms': 'Předloktí', 'shoulders': 'Ramena', 'waist': 'Břicho', 'cardio': 'Kardio',
-}
 
 export default function WorkoutDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()

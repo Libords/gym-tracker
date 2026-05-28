@@ -9,14 +9,8 @@ import { useExercises } from '../../../../src/hooks/useWorkouts'
 import { useExerciseFilters } from '../../../../src/hooks/useExerciseFilters'
 import { TemplateExerciseRow } from '../../../../src/components/workouts/TemplateExerciseRow'
 import { EquipmentChips } from '../../../../src/components/workouts/EquipmentChips'
+import { BODY_PARTS, BODY_PART_LABELS } from '../../../../src/lib/bodyParts'
 import type { Exercise, TemplateExercise } from '../../../../src/types/workout'
-
-const BODY_PARTS = ['Vše', 'chest', 'back', 'upper legs', 'lower legs', 'upper arms', 'lower arms', 'shoulders', 'waist', 'cardio']
-const BODY_PART_LABELS: Record<string, string> = {
-  'Vše': 'Vše', 'chest': 'Hrudník', 'back': 'Záda',
-  'upper legs': 'Stehna', 'lower legs': 'Lýtka', 'upper arms': 'Paže',
-  'lower arms': 'Předloktí', 'shoulders': 'Ramena', 'waist': 'Břicho', 'cardio': 'Kardio',
-}
 
 export default function TemplateEditorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()

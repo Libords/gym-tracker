@@ -7,6 +7,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import * as https from 'https'
+import { muscleToBodyPart } from '../src/lib/bodyParts'
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -34,23 +35,6 @@ type RawExercise = {
   images: string[]
 }
 
-// Mapování angličtina → část těla (pro filtrování v UI)
-const categoryToBodyPart: Record<string, string> = {
-  chest: 'chest',
-  back: 'back',
-  shoulders: 'shoulders',
-  arms: 'upper arms',
-  legs: 'upper legs',
-  calves: 'lower legs',
-  abs: 'waist',
-  cardio: 'cardio',
-  olympic_weightlifting: 'back',
-  powerlifting: 'back',
-  stretching: 'back',
-  plyometrics: 'upper legs',
-  strongman: 'back',
-}
-
 function fetchJson(url: string): Promise<RawExercise[]> {
   return new Promise((resolve, reject) => {
     https.get(url, res => {
@@ -69,7 +53,7 @@ async function main() {
 
   const exercises = raw.map(e => ({
     name: e.name,
-    body_part: categoryToBodyPart[e.category] ?? e.category,
+    body_part: muscleToBodyPart(e.primaryMuscles[0]),
     equipment: e.equipment ?? 'body weight',
     category: e.category,
     target: e.primaryMuscles[0] ?? null,

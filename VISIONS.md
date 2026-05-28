@@ -363,3 +363,31 @@ Tyto úvahy vznikly při prvním procházení appky v Expo Go po dokončení Spr
 - **Export dat** (CSV/JSON): jednorázový poplatek; GDPR-friendly, snižuje support load.
 - **Reklamy ve free tier**: ano — banner + občasné video interstitial (skip po pár vteřinách). Premium = bez reklam. Architektura: `entitlements.ads_disabled` flag.
 - **Liborův účet**: vše odemčené zdarma (admin/owner flag v DB).
+
+### 16.9 🐛✅ Exercise body_part filtr opraven (2026-05-28)
+
+**Problém:** Filtr v exercise pickeru (Vše/Hrudník/Záda/…) vracel u většiny partií 0 cviků — „Hrudník" 0, „Záda" 182 (smetiště). Příčina: seed skript mapoval `body_part` z free-exercise-db pole `category`, jenže to jsou typy tréninku (strength/cardio/stretching/powerlifting/strongman/…), ne svalové partie. Skoro vše skončilo jako `body_part='strength'`.
+
+**Fix (2026-05-28):** `body_part` přepočítán z `muscle_group` (= `primaryMuscles[0]`, uložené správně) přes coarse grouping. Single source of truth: `src/lib/bodyParts.ts` (sdílí filtr UI, seed skript i migrace). Nová taxonomie: Hrudník / Záda / Ramena / Paže / Nohy / Lýtka / Břicho / Krk / Ostatní. Migrace `20260528_fix_exercise_body_part.sql` (UPDATE podle muscle_group). Seed skript opraven pro budoucí re-importy. ZBÝVÁ uživatel: aplikovat migraci.
+
+### 16.10 🔜 Exercise obrázky (Strong-style)
+
+**Stav:** vize, neimplementováno.
+
+**Idea:** U každého cviku zobrazit obrázek/animaci, ne jen název (jako Strong). Zdroj: free-exercise-db má `images[]` pole (relativní cesty k PNG v jejich repu, raw URL `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/<path>`). Při importu jsme je zahodili — stačí přidat sloupec `exercises.image_url` (nebo `images text[]`), doplnit do seed skriptu a zobrazit v pickeru + detailu. 2 obrázky per cvik (start/end pozice).
+
+**Pozn.:** Obrázky jsou hostované na GitHubu — pro produkci zvážit mirror do Supabase Storage / R2 (rychlost, nezávislost na third-party). Pro MVP stačí raw GitHub URL.
+
+### 16.11 🔜 Strong-style zadávání sérií (redesign workout flow)
+
+**Stav:** vize, větší redesign. Reference: screenshoty ze Strongu (2026-05-28).
+
+**Co se Liborovi líbí na Strongu a chce přenést:**
+- **Per-set řádky** s sloupci: Set # / Previous (minule) / kg / Reps / ✓ (lock/done).
+- **Previous sloupec** — ukazuje co uživatel zvládl posledně u stejného cviku (např. „30 kg × 12"), jako reference pro dnešek.
+- **Warmup sety** — označené `W` (oranžově), nepočítají se do objemu jako pracovní série.
+- **Inline zadávání** — po každé sérii uživatel zapíše kg + reps přímo do předpřipravených řádků v běžícím tréninku. Přesně odpovídá reálnému postupu (série → zápis → rest → další série).
+- **Rest timer mezi sériemi** — odpočet zobrazený pod každou sérií (Sprint I rest timer už máme, jen jinak vizualizovaný — per-set místo globální).
+- **+ Add Set** tlačítko per cvik.
+
+**Pozn.:** Tohle je přepracování workout-detail obrazovky (`workouts/[id].tsx`) z aktuálního „přidej jednu sérii" modelu na Strong-style tabulku. Velký kus — vlastní sprint. Datově: `workout_sets` už má reps/weight/set pořadí; přidat `is_warmup` flag a „previous" lookup (poslední workout_set pro daný exercise_id daného usera). Provázat s rest timerem per-set.
