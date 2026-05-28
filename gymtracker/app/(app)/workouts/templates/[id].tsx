@@ -9,6 +9,7 @@ import { useExercises } from '../../../../src/hooks/useWorkouts'
 import { useExerciseFilters } from '../../../../src/hooks/useExerciseFilters'
 import { TemplateExerciseRow } from '../../../../src/components/workouts/TemplateExerciseRow'
 import { EquipmentChips } from '../../../../src/components/workouts/EquipmentChips'
+import { ExerciseThumbnail } from '../../../../src/components/workouts/ExerciseThumbnail'
 import { BODY_PARTS, BODY_PART_LABELS } from '../../../../src/lib/bodyParts'
 import type { Exercise, TemplateExercise } from '../../../../src/types/workout'
 
@@ -171,7 +172,8 @@ export default function TemplateEditorScreen() {
             <ScrollView style={{ maxHeight: 320 }}>
               {filteredExercises.map(e => (
                 <TouchableOpacity key={e.id} style={styles.exerciseItem} onPress={() => handleAddExercise(e)}>
-                  <View style={{ flex: 1 }}>
+                  <ExerciseThumbnail uri={e.image_url} name={e.name} />
+                  <View style={{ flex: 1, marginLeft: 10 }}>
                     <Text style={styles.exerciseItemText}>{e.name}</Text>
                     {(e.target || e.equipment) && (
                       <Text style={styles.exerciseMeta}>
@@ -213,7 +215,7 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 13, color: '#555' },
   chipTextActive: { color: '#fff' },
   resultCount: { color: '#999', fontSize: 12, marginBottom: 6 },
-  exerciseItem: { paddingVertical: 11, borderBottomWidth: 1, borderColor: '#f0f0f0' },
+  exerciseItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 11, borderBottomWidth: 1, borderColor: '#f0f0f0' },
   exerciseItemText: { fontSize: 15, fontWeight: '500' },
   exerciseMeta: { color: '#888', fontSize: 12, marginTop: 1 },
   cancelBtn: { padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#ddd', alignItems: 'center', marginTop: 12 },

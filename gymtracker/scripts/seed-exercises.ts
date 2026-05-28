@@ -20,6 +20,7 @@ if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
 
 const RAW_URL = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json'
+const IMAGE_BASE = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/'
 
 type RawExercise = {
   id: string
@@ -60,6 +61,7 @@ async function main() {
     muscle_group: e.primaryMuscles[0] ?? null,
     secondary_muscles: e.secondaryMuscles,
     instructions: e.instructions,
+    image_url: e.images[0] ? IMAGE_BASE + e.images[0] : null,
     is_custom: false,
     created_by: null,
   }))

@@ -8,6 +8,7 @@ export type Exercise = {
   target: string | null
   secondary_muscles: string[] | null
   instructions: string[] | null
+  image_url: string | null
   is_custom: boolean
   created_by: string | null
 }

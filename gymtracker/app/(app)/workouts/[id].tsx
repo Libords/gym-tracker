@@ -10,6 +10,7 @@ import { useProfile } from '../../../src/hooks/useProfile'
 import { useExerciseFilters } from '../../../src/hooks/useExerciseFilters'
 import { RestTimer } from '../../../src/components/workouts/RestTimer'
 import { EquipmentChips } from '../../../src/components/workouts/EquipmentChips'
+import { ExerciseThumbnail } from '../../../src/components/workouts/ExerciseThumbnail'
 import { BODY_PARTS, BODY_PART_LABELS } from '../../../src/lib/bodyParts'
 import type { Exercise } from '../../../src/types/workout'
 
@@ -189,7 +190,8 @@ export default function WorkoutDetailScreen() {
                 <ScrollView style={{ maxHeight: 300 }}>
                   {filteredExercises.map(e => (
                     <TouchableOpacity key={e.id} style={styles.exerciseItem} onPress={() => setSelectedExercise(e)}>
-                      <View style={{ flex: 1 }}>
+                      <ExerciseThumbnail uri={e.image_url} name={e.name} />
+                      <View style={{ flex: 1, marginLeft: 10 }}>
                         <Text style={styles.exerciseItemText}>{e.name}</Text>
                         {(e.target || e.equipment) && (
                           <Text style={styles.exerciseMeta}>
@@ -239,6 +241,11 @@ export default function WorkoutDetailScreen() {
         <View style={styles.overlay}>
           <View style={styles.modal}>
             <Text style={styles.modalTitle}>{detailExercise?.name}</Text>
+            {detailExercise && (
+              <View style={{ alignItems: 'center', marginBottom: 10 }}>
+                <ExerciseThumbnail uri={detailExercise.image_url} name={detailExercise.name} size={140} />
+              </View>
+            )}
             {detailExercise?.target && <Text style={styles.detailMeta}>🎯 {detailExercise.target}</Text>}
             {detailExercise?.equipment && <Text style={styles.detailMeta}>🏋️ {detailExercise.equipment}</Text>}
             {detailExercise?.secondary_muscles && detailExercise.secondary_muscles.length > 0 && (
